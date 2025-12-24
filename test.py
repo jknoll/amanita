@@ -7,8 +7,12 @@ import pandas as pd
 import os
 
 # Load model
+print("Loading model...")
 model = timm.create_model("hf-hub:BVRA/beit_base_patch16_224.in1k_ft_fungitastic_224", pretrained=True)
+print("Model loaded")   
+print("Evaluating model...")
 model = model.eval()
+print("Model evaluated")
 
 # Image transforms
 train_transforms = T.Compose([T.Resize((224, 224)), 
@@ -16,7 +20,7 @@ train_transforms = T.Compose([T.Resize((224, 224)),
                               T.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])]) 
 
 # Load image and get prediction
-img = Image.open('0-4100089130.JPG')
+img = Image.open('0-3032614317.JPG') # Should be categoryID 119
 output = model(train_transforms(img).unsqueeze(0))
 
 # Get predicted class index
@@ -34,7 +38,8 @@ print(f"Predicted class index: {predicted_class_idx}")
 try:
     # Try to load from metadata CSV (adjust path as needed)
     # The metadata files are typically in: metadata/FungiTastic-Mini/FungiTastic-Mini-ClosedSet-Train.csv
-    metadata_path = "FungiTastic/metadata/FungiTastic-Mini/FungiTastic-Mini-ClosedSet-Train.csv"
+    # Try full FungiTastic dataset first, fall back to Mini if not found
+    metadata_path = "/Volumes/Extra FAT/FungiTastic/dataset/FungiTastic/metadata/FungiTastic/FungiTastic-Train.csv"
     if os.path.exists(metadata_path):
         train_df = pd.read_csv(metadata_path)
         # Create mapping from class_id to scientificName
@@ -43,12 +48,16 @@ try:
         # Ensure the mapping is sorted by class_id to match model output indices
         sorted_ids = sorted(id2species.keys())
         id2species_sorted = {i: id2species[sorted_ids[i]] for i in range(len(sorted_ids))}
-        
+
+        print(f"Number of classes in metadata: {len(id2species_sorted)}")
+        print(f"Number of classes in model output: {output.shape[1]}")
+        print(f"Category ID range in metadata: {min(sorted_ids)} to {max(sorted_ids)}")
+
         if predicted_class_idx < len(id2species_sorted):
             predicted_species = id2species_sorted[predicted_class_idx]
             print(f"Predicted species: {predicted_species}")
         else:
-            print(f"Warning: Class index {predicted_class_idx} out of range")
+            print(f"Warning: Class index {predicted_class_idx} out of range (metadata has {len(id2species_sorted)} classes)")
     else:
         print(f"Metadata file not found at {metadata_path}")
         print("To get species names, you need to:")

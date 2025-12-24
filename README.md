@@ -1,8 +1,9 @@
 # amanita
 
 
-To activate the venv and install dependencies:
+To create and activate the venv and install dependencies:
 ```bash
+$ python -m venv .amanita
 $ source .amanita/bin/activate
 $ pip install -r requirements.txt
 ```
