@@ -9,6 +9,7 @@ import os
 # Load model
 print("Loading model...")
 model = timm.create_model("hf-hub:BVRA/beit_base_patch16_224.in1k_ft_fungitastic_224", pretrained=True)
+                                  
 print("Model loaded")   
 print("Evaluating model...")
 model = model.eval()
@@ -20,7 +21,8 @@ train_transforms = T.Compose([T.Resize((224, 224)),
                               T.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])]) 
 
 # Load image and get prediction
-img = Image.open('0-3032614317.JPG') # Should be categoryID 119
+# img = Image.open('0-3032614317.JPG') # Should be categoryID 119
+img = Image.open('0-4100089130.JPG') 
 output = model(train_transforms(img).unsqueeze(0))
 
 # Get predicted class index
@@ -39,7 +41,7 @@ try:
     # Try to load from metadata CSV (adjust path as needed)
     # The metadata files are typically in: metadata/FungiTastic-Mini/FungiTastic-Mini-ClosedSet-Train.csv
     # Try full FungiTastic dataset first, fall back to Mini if not found
-    metadata_path = "/Volumes/Extra FAT/FungiTastic/dataset/FungiTastic/metadata/FungiTastic/FungiTastic-Train.csv"
+    metadata_path = "/data/uds-fern-absorbed-dugong-251223/full_300px/metadata/FungiTastic/FungiTastic-Train.csv"
     if os.path.exists(metadata_path):
         train_df = pd.read_csv(metadata_path)
         # Create mapping from class_id to scientificName
