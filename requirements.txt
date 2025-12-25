@@ -1,3 +1,9 @@
 timm
 pandas
 numpy<2
+torch
+torchvision
+albumentations
+scikit-learn
+tqdm
+cycling-utils
