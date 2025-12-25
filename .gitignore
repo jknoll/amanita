@@ -1,5 +1,12 @@
 checkpoints/
+checkpoints_multitask/
+checkpoints_multitask_isc/
 .amanita
+
+# ISC-specific directories
+runs/
+tensorboard_logs/
+artifacts/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,0 +1,69 @@
+# Strong Compute ISC Configuration for Multi-Task BEiT Training
+# Reference: https://docs.strongcompute.com/
+
+# Training job configuration
+name: fungitastic-multitask-beit
+description: Multi-task taxonomic classification with BEiT on FungiTastic dataset
+
+# Compute resources
+resources:
+  gpu: 4  # Number of GPUs (adjust based on availability)
+  gpu_type: "A100"  # or "V100", "RTX3090", etc.
+  cpu: 16  # CPU cores per GPU
+  memory: "64GB"  # RAM per GPU
+
+# Docker image (adjust to your environment)
+image: "pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime"
+
+# Data paths (adjust to your ISC setup)
+# These will be mounted into the container
+data:
+  dataset_path: "/data/fungitastic"  # Path to FungiTastic dataset
+  mappings_path: "/data/fungitastic/taxonomic_mappings.json"
+  class_weights_path: "/data/fungitastic/class_weights.pt"
+
+# Training arguments
+training:
+  # Data paths (relative to dataset_path)
+  train_csv: "metadata/FungiTastic/FungiTastic-Train.csv"
+  val_csv: "metadata/FungiTastic/FungiTastic-Val.csv"
+  test_csv: "metadata/FungiTastic/FungiTastic-Test.csv"
+
+  # Model configuration
+  model_name: "hf-hub:BVRA/beit_base_patch16_224.in1k_ft_fungitastic_224"
+  pretrained: true
+
+  # Training hyperparameters
+  epochs: 10
+  batch_size: 16  # Per GPU
+  learning_rate: 0.0001
+  num_workers: 4
+  use_class_weights: true
+
+# Output configuration
+# ISC will set these environment variables:
+# - CHECKPOINT_ARTIFACT_PATH: For model checkpoints
+# - LOSSY_ARTIFACT_PATH: For TensorBoard logs
+# - PERSISTENT_ARTIFACT_PATH: For final outputs
+
+# Command to run (will be executed in the container)
+command: |
+  python train_isc_multitask.py \
+    --train-path ${DATASET_PATH}/${TRAIN_CSV} \
+    --val-path ${DATASET_PATH}/${VAL_CSV} \
+    --test-path ${DATASET_PATH}/${TEST_CSV} \
+    --mappings-path ${MAPPINGS_PATH} \
+    --class-weights-path ${CLASS_WEIGHTS_PATH} \
+    --model-name ${MODEL_NAME} \
+    --pretrained \
+    --epochs ${EPOCHS} \
+    --batch-size ${BATCH_SIZE} \
+    --lr ${LEARNING_RATE} \
+    --workers ${NUM_WORKERS} \
+    --use-class-weights
+
+# Monitoring
+monitoring:
+  tensorboard: true
+  log_interval: 10  # Batches between logs
+  checkpoint_interval: 1  # Epochs between checkpoints

@@ -81,9 +81,46 @@ python train_minimal.py \
 - Epoch 2: Val Acc ~85%, Val F1 ~82%
 - Training time: ~10 seconds per epoch on RTX 3090
 
-### Full Training (Coming Soon)
+### Multi-Task Training (Local)
 
-Full-scale training with complete dataset and multi-task taxonomic classification.
+Train the multi-task BEiT model locally (all 6 taxonomic ranks):
+
+```bash
+# 1. Ensure you have taxonomic mappings and class weights
+python create_taxonomic_mappings.py  # Creates taxonomic_mappings.json
+python compute_class_weights.py      # Creates class_weights.pt
+
+# 2. Run multi-task training
+python train_multitask.py \
+    --train-path /data/uds-fern-absorbed-dugong-251223/full_300px/metadata/FungiTastic/FungiTastic-Train.csv \
+    --val-path /data/uds-fern-absorbed-dugong-251223/full_300px/metadata/FungiTastic/FungiTastic-Val.csv \
+    --test-path /data/uds-fern-absorbed-dugong-251223/full_300px/metadata/FungiTastic/FungiTastic-Test.csv \
+    --epochs 10 \
+    --batch-size 16 \
+    --lr 0.0001 \
+    --use-class-weights \
+    --save-dir ./checkpoints_multitask
+```
+
+### ISC Cluster Training (Recommended for Full Dataset)
+
+For distributed training on Strong Compute ISC cluster:
+
+```bash
+# 1. Update fungitastic_multitask.isc with your project ID
+
+# 2. Launch training job
+isc_run fungitastic_multitask.isc
+
+# 3. Monitor progress
+isc status
+isc logs <job-id>
+
+# 4. Download results
+isc download <job-id>
+```
+
+See **[README_ISC.md](README_ISC.md)** for detailed ISC training instructions.
 
 ## Testing and Verification
 
@@ -145,6 +182,30 @@ This will:
 - **Efficient Training**: GPU-accelerated with mixed precision support
 - **Flexible Data Loading**: Works with full dataset or minimal subsets
 - **Progress Tracking**: Built-in metrics (loss, accuracy, F1 score)
+
+Usage Example:
+
+  # 1. Update project ID in fungitastic_multitask.isc
+  #    Change "<project-id>" to your actual ISC project ID
+
+  # 2. Launch training job
+  isc train fungitastic_multitask.isc
+
+  # 3. Monitor progress
+  isc status
+  isc logs <job-id>
+
+  # 4. Download checkpoints when complete
+  isc download <job-id>
+
+  Key Features:
+
+  - ✅ Cycle mode enabled (cost-efficient preemptible instances)
+  - ✅ Dataset by ID (uds-fern-absorbed-dugong-251223)
+  - ✅ 4 GPUs configured (effective batch size: 64)
+  - ✅ Complete command with all necessary arguments
+  - ✅ Class balancing enabled via --use-class-weights
+  - ✅ 10 epochs training configuration
 
 ## Troubleshooting
 

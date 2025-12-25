@@ -75,3 +75,5 @@ And:
     output_directory = os.environ["CHECKPOINT_ARTIFACT_PATH"]
     saver = AtomicDirectory(output_directory=output_directory, is_master=args.is_master)
 ```
+
+Create a .isc file similar to https://github.com/StrongResearch/isc-demos/blob/main/fashion_mnist/fashion_mnist.isc. Default to "cycle" mode to start. and provide an example command line with usage in the README.md. Reference the dataset by id.
