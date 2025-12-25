@@ -6,6 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is an **amanita** project repository that works with the **FungiTastic** dataset - a fungi classification benchmark consisting of ~350k multimodal observations across 5k fine-grained species. The dataset contains photographs and additional metadata including meteorological data, satellite images, and segmentation masks.
 
+**Project Goal**: This repository modifies the BEiT 224 model from FungiTastic to output additional taxonomic ranks (beyond just species) for each example and retrains with this modification in place.
+
+- **Base Model**: `hf-hub:BVRA/beit_base_patch16_224.in1k_ft_fungitastic_224`
+- **Dataset**: Full FungiTastic dataset at 300px resolution
+- **Dataset Path**: `/data/uds-fern-absorbed-dugong-251223/full_300px/metadata/FungiTastic/FungiTastic-Train.csv`
+
 The repository includes:
 - Dataset tools and loaders for the FungiTastic dataset
 - Multiple baseline implementations for different computer vision tasks
@@ -14,12 +20,18 @@ The repository includes:
 
 ## Environment Setup
 
-Determine if we are in the local (user workstation) environment, or on the Strong Compute ISC and running the isc-demos image, by inspecting the /opt/ directory for a /venv/. The presence of the /opt/venv indicates the latter, and we should activate and use that environment.
+**Environment Detection**: Check if running on Strong Compute ISC (isc-demos image) or local workstation:
 
 ```bash
-# Create and activate virtual environment
-python -m venv .amanita
-source .amanita/bin/activate
+# Check for ISC environment
+if [ -d "/opt/venv" ]; then
+    # On Strong Compute ISC - use pre-configured venv
+    source /opt/venv/bin/activate
+else
+    # On local workstation - create and activate local venv
+    python -m venv .amanita
+    source .amanita/bin/activate
+fi
 
 # Install basic dependencies (for inference)
 pip install -r requirements.txt

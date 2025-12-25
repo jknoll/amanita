@@ -1,0 +1,63 @@
+/opt/venv/lib/python3.10/site-packages/albumentations/__init__.py:24: UserWarning: A new version of Albumentations is available: 2.0.8 (you have 1.4.24). Upgrade using: pip install -U albumentations. To disable automatic update checks, set the environment variable NO_ALBUMENTATIONS_UPDATE to 1.
+  check_for_updates()
+(script) INFO: Loading training config.
+(script) DEBUG: Extra arguments passed to the script: {}
+(script) INFO: Setting run name: beit_base_patch16_224.in22k_ft_in1k-CrossEntropyLoss-vit_heavy
+(script) INFO: Using experiment directory: ../runs/beit_base_patch16_224.in22k_ft_in1k-CrossEntropyLoss-vit_heavy/exp1
+(script) INFO: Using training configuration: {
+    "augmentations": "vit_heavy",
+    "image_size": [
+        224,
+        224
+    ],
+    "dataset": "FungiTastic",
+    "architecture": "beit_base_patch16_224.in22k_ft_in1k",
+    "loss": "CrossEntropyLoss",
+    "optimizer": "AdamW",
+    "scheduler": "plateau",
+    "epochs": 2,
+    "learning_rate": 0.0001,
+    "batch_size": 16,
+    "accumulation_steps": 1,
+    "random_seed": 777,
+    "workers": 4,
+    "multigpu": false,
+    "tags": [
+        "BEiT-baseline",
+        "224x224",
+        "minimal-test"
+    ],
+    "root_path": "../",
+    "run_name": "beit_base_patch16_224.in22k_ft_in1k-CrossEntropyLoss-vit_heavy",
+    "exp_name": "exp1",
+    "exp_path": "../runs/beit_base_patch16_224.in22k_ft_in1k-CrossEntropyLoss-vit_heavy/exp1"
+}
+(fgvc) INFO: Using device: cuda (None)
+(fgvc) INFO: Device names: 0: NVIDIA GeForce RTX 3090
+(script) INFO: Loading training and validation metadata.
+(script) INFO: Loaded training metadata. Number of samples: 500
+(script) INFO: Loaded validation metadata. Number of samples: 100
+(script) INFO: Loaded test metadata. Number of samples: 100
+(script) INFO: Creating model, optimizer, and scheduler.
+Traceback (most recent call last):
+  File "/root/amanita/FungiTastic/baselines/closed_set/train.py", line 414, in <module>
+    train_clf()
+  File "/root/amanita/FungiTastic/baselines/closed_set/train.py", line 294, in train_clf
+    model, model_mean, model_std = load_model(config)
+  File "/opt/venv/lib/python3.10/site-packages/fgvc/utils/experiment.py", line 431, in load_model
+    model = get_model(
+  File "/opt/venv/lib/python3.10/site-packages/fgvc/core/models.py", line 45, in get_model
+    model = timm.create_model(architecture_name, pretrained=pretrained)
+  File "/opt/venv/lib/python3.10/site-packages/timm/models/_factory.py", line 138, in create_model
+    model = create_fn(
+  File "/opt/venv/lib/python3.10/site-packages/timm/models/beit.py", line 930, in beit_base_patch16_224
+    model = _create_beit('beit_base_patch16_224', pretrained=pretrained, **dict(model_args, **kwargs))
+  File "/opt/venv/lib/python3.10/site-packages/timm/models/beit.py", line 915, in _create_beit
+    model = build_model_with_cfg(
+  File "/opt/venv/lib/python3.10/site-packages/timm/models/_builder.py", line 425, in build_model_with_cfg
+    pretrained_cfg = resolve_pretrained_cfg(
+  File "/opt/venv/lib/python3.10/site-packages/timm/models/_builder.py", line 368, in resolve_pretrained_cfg
+    pretrained_cfg = get_pretrained_cfg(model_with_tag)
+  File "/opt/venv/lib/python3.10/site-packages/timm/models/_registry.py", line 332, in get_pretrained_cfg
+    raise RuntimeError(f'Invalid pretrained tag ({tag}) for {arch_name}.')
+RuntimeError: Invalid pretrained tag (in22k_ft_in1k) for beit_base_patch16_224.
