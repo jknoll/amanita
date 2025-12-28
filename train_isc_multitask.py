@@ -1,8 +1,15 @@
+#!/usr/bin/env python3
 """
 ISC-compatible training script for multi-task BEiT model on Strong Compute cluster.
 
 This script is adapted for distributed training on the Strong Compute ISC cluster
 using cycling_utils for interruptible and resumable training.
+
+**LOCAL/CLUSTER DETECTION:**
+- Detects cluster mode if RANK or WORLD_SIZE environment variables are set (set by torchrun)
+- Falls back to local single-GPU mode otherwise
+- In local mode: uses standard PyTorch components, no cycling_utils required
+- In cluster mode: uses ISC cycling_utils for distributed training
 
 Based on: https://github.com/StrongResearch/isc-demos
 """
@@ -19,22 +26,42 @@ import torch.nn as nn
 import torch.distributed as dist
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-# ISC cycling_utils imports
-from cycling_utils import (
-    InterruptableDistributedSampler,
-    MetricsTracker,
-    AtomicDirectory,
-    atomic_torch_save,
-)
+# ============================================================
+# DETECTION MECHANISM: Check for distributed environment variables
+# ============================================================
+IS_DISTRIBUTED = 'RANK' in os.environ or 'WORLD_SIZE' in os.environ
+
+# Conditionally import ISC cycling_utils only in cluster mode
+if IS_DISTRIBUTED:
+    try:
+        from cycling_utils import (
+            InterruptableDistributedSampler,
+            MetricsTracker,
+            AtomicDirectory,
+            atomic_torch_save,
+        )
+        CYCLING_UTILS_AVAILABLE = True
+    except ImportError:
+        print("WARNING: cycling_utils not available, falling back to local mode")
+        IS_DISTRIBUTED = False
+        CYCLING_UTILS_AVAILABLE = False
+else:
+    CYCLING_UTILS_AVAILABLE = False
 
 from models.beit_multitask import create_beit_multitask
 from dataset_multitask import FungiTasticMultiTask
 from losses import MultiTaskLoss
 from metrics import MultiTaskMetrics, format_metrics
+
+# Print mode at import time
+if IS_DISTRIBUTED:
+    print("🌐 CLUSTER MODE: Distributed training with cycling_utils")
+else:
+    print("💻 LOCAL MODE: Single-GPU training")
 
 
 class Timer:
@@ -71,6 +98,8 @@ def parse_args():
                         help='Path to taxonomic mappings JSON')
     parser.add_argument('--class-weights-path', type=str, default='class_weights.pt',
                         help='Path to class weights file')
+    parser.add_argument('--image-root', type=str, default=None,
+                        help='Root directory for images (required if CSV has no image_path column)')
 
     # Model arguments
     parser.add_argument('--model-name', type=str,
@@ -104,17 +133,29 @@ def parse_args():
 
 def setup_distributed(args):
     """Initialize distributed training environment."""
-    if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
-        args.rank = int(os.environ['RANK'])
-        args.world_size = int(os.environ['WORLD_SIZE'])
-        args.local_rank = int(os.environ['LOCAL_RANK'])
+    if IS_DISTRIBUTED:
+        # Cluster mode: setup distributed training
+        if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
+            args.rank = int(os.environ['RANK'])
+            args.world_size = int(os.environ['WORLD_SIZE'])
+            args.local_rank = int(os.environ.get('LOCAL_RANK', 0))
+        else:
+            args.rank = 0
+            args.world_size = 1
+            args.local_rank = 0
 
-    args.is_master = args.rank == 0 if hasattr(args, 'rank') else True
+        args.is_master = args.rank == 0
 
-    # Initialize process group for distributed training
-    if args.world_size > 1:
-        dist.init_process_group(backend='nccl')
-        torch.cuda.set_device(args.local_rank)
+        # Initialize process group for distributed training
+        if args.world_size > 1:
+            dist.init_process_group(backend='nccl')
+            torch.cuda.set_device(args.local_rank)
+    else:
+        # Local mode: single GPU
+        args.rank = 0
+        args.world_size = 1
+        args.local_rank = 0
+        args.is_master = True
 
     return args
 
@@ -152,24 +193,39 @@ def load_data_and_mappings(args, timer):
 
 def create_datasets_and_samplers(train_df, val_df, mappings, args, timer):
     """Create datasets and distributed samplers."""
-    # Create datasets
-    train_dataset = FungiTasticMultiTask(
-        train_df,
-        mappings,
-        is_training=True
-    )
+    # Import transforms
+    import albumentations as A
+    from albumentations.pytorch import ToTensorV2
 
-    val_dataset = FungiTasticMultiTask(
-        val_df,
-        mappings,
-        is_training=False
-    )
+    # Create transforms
+    train_transform = A.Compose([
+        A.Resize(224, 224),
+        A.HorizontalFlip(p=0.5),
+        A.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+        ToTensorV2(),
+    ])
+
+    val_transform = A.Compose([
+        A.Resize(224, 224),
+        A.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+        ToTensorV2(),
+    ])
+
+    # Create datasets
+    train_dataset = FungiTasticMultiTask(train_df, train_transform, mappings, args.image_root, split='train')
+    val_dataset = FungiTasticMultiTask(val_df, val_transform, mappings, args.image_root, split='val')
 
     timer.report("Created datasets")
 
-    # Create distributed samplers (ISC-specific)
-    train_sampler = InterruptableDistributedSampler(train_dataset)
-    val_sampler = InterruptableDistributedSampler(val_dataset)
+    # Create samplers based on mode
+    if IS_DISTRIBUTED and CYCLING_UTILS_AVAILABLE:
+        # Cluster mode: use ISC samplers
+        train_sampler = InterruptableDistributedSampler(train_dataset)
+        val_sampler = InterruptableDistributedSampler(val_dataset)
+    else:
+        # Local mode: use standard PyTorch samplers
+        train_sampler = RandomSampler(train_dataset)
+        val_sampler = SequentialSampler(val_dataset)
 
     timer.report("Initialized samplers")
 
@@ -258,7 +314,10 @@ def train_epoch(model, train_loader, train_sampler, criterion, optimizer,
         dict: Training metrics
     """
     model.train()
-    train_sampler.set_epoch(epoch)  # Important for proper shuffling in distributed training
+
+    # Set epoch for distributed sampler
+    if IS_DISTRIBUTED and hasattr(train_sampler, 'set_epoch'):
+        train_sampler.set_epoch(epoch)  # Important for proper shuffling in distributed training
 
     local_metrics = MultiTaskMetrics()
     total_loss = 0.0
@@ -329,7 +388,10 @@ def validate(model, val_loader, val_sampler, criterion, device, epoch,
         dict: Validation metrics
     """
     model.eval()
-    val_sampler.set_epoch(epoch)
+
+    # Set epoch for distributed sampler
+    if IS_DISTRIBUTED and hasattr(val_sampler, 'set_epoch'):
+        val_sampler.set_epoch(epoch)
 
     local_metrics = MultiTaskMetrics()
     total_loss = 0.0
@@ -384,7 +446,7 @@ def validate(model, val_loader, val_sampler, criterion, device, epoch,
 
 def save_checkpoint(model, optimizer, scheduler, train_sampler, val_sampler,
                    epoch, metrics, saver, args):
-    """Save model checkpoint using ISC AtomicDirectory."""
+    """Save model checkpoint (ISC atomic save or standard torch.save)."""
     # Only master process saves
     if not args.is_master:
         return
@@ -400,14 +462,25 @@ def save_checkpoint(model, optimizer, scheduler, train_sampler, val_sampler,
         'model_state_dict': model_state,
         'optimizer_state_dict': optimizer.state_dict(),
         'scheduler_state_dict': scheduler.state_dict() if scheduler else None,
-        'train_sampler_state': train_sampler.state_dict(),
-        'val_sampler_state': val_sampler.state_dict(),
         'metrics': metrics
     }
 
-    # Save using atomic save (ISC-specific)
+    # Add sampler state only if using distributed samplers
+    if IS_DISTRIBUTED and hasattr(train_sampler, 'state_dict'):
+        checkpoint['train_sampler_state'] = train_sampler.state_dict()
+        checkpoint['val_sampler_state'] = val_sampler.state_dict()
+
     checkpoint_path = f'checkpoint_epoch_{epoch}.pt'
-    atomic_torch_save(saver, checkpoint, checkpoint_path)
+
+    # Save using appropriate method
+    if IS_DISTRIBUTED and CYCLING_UTILS_AVAILABLE and hasattr(saver, 'get_path'):
+        # ISC cluster mode: use atomic save
+        atomic_torch_save(saver, checkpoint, checkpoint_path)
+    else:
+        # Local mode: use standard torch.save
+        full_path = os.path.join(saver, checkpoint_path)
+        torch.save(checkpoint, full_path)
+
     print(f"  Checkpoint saved: {checkpoint_path}")
 
 
@@ -444,19 +517,26 @@ def main():
         writer = SummaryWriter(log_dir=log_dir)
         timer.report("Initialized TensorBoard writer")
 
-    # ISC-specific: Setup checkpoint saver
+    # Setup checkpoint saver
     if 'CHECKPOINT_ARTIFACT_PATH' in os.environ:
         output_directory = os.environ['CHECKPOINT_ARTIFACT_PATH']
     else:
         output_directory = './checkpoints_multitask_isc'
         os.makedirs(output_directory, exist_ok=True)
 
-    saver = AtomicDirectory(output_directory=output_directory, is_master=args.is_master)
-    timer.report("Initialized checkpoint saver")
+    if IS_DISTRIBUTED and CYCLING_UTILS_AVAILABLE:
+        saver = AtomicDirectory(output_directory=output_directory, is_master=args.is_master)
+        timer.report("Initialized checkpoint saver (ISC)")
+    else:
+        saver = output_directory  # Just use the directory path in local mode
+        timer.report("Initialized checkpoint saver (local)")
 
     # ISC-specific: Setup metrics tracker for distributed aggregation
-    metrics_tracker = MetricsTracker(is_master=args.is_master)
-    timer.report("Initialized metrics tracker")
+    if IS_DISTRIBUTED and CYCLING_UTILS_AVAILABLE:
+        metrics_tracker = MetricsTracker()
+        timer.report("Initialized metrics tracker")
+    else:
+        metrics_tracker = None  # Not needed in local mode
 
     # Load data
     mappings, num_classes, train_df, val_df, test_df = load_data_and_mappings(args, timer)
@@ -555,7 +635,13 @@ def main():
                 'scheduler_state_dict': scheduler.state_dict() if scheduler else None,
                 'metrics': val_metrics
             }
-            atomic_torch_save(saver, best_checkpoint, 'best_model.pt')
+
+            # Save best model using appropriate method
+            if IS_DISTRIBUTED and CYCLING_UTILS_AVAILABLE and hasattr(saver, 'get_path'):
+                atomic_torch_save(saver, best_checkpoint, 'best_model.pt')
+            else:
+                torch.save(best_checkpoint, os.path.join(saver, 'best_model.pt'))
+
             print(f"  ★ New best model! (F1: {best_val_f1:.2%})")
 
     if args.is_master:

@@ -42,6 +42,25 @@ pip install -r FungiTastic/baselines/few_shot/requirements.txt
 pip install -r FungiTastic/baselines/segmentation/requirements.txt
 ```
 
+## ISC Cluster Training Guidelines
+
+**IMPORTANT**: When creating or modifying `.isc` configuration files for Strong Compute ISC cluster:
+
+- **Always use `compute_mode = "cycle"`** unless the user explicitly approves using "burst" mode
+- "cycle" mode uses preemptible instances (cost-efficient)
+- "burst" mode uses dedicated instances (expensive) and requires explicit approval
+- Never change from "cycle" to "burst" without asking the user first
+
+Example `.isc` file (all fields required):
+```python
+isc_project_id = "<project-id>"  # Required: Your ISC project ID
+experiment_name = "my_experiment"  # Required: Name for this run
+gpus = 4  # Required: Number of GPUs
+compute_mode = "cycle"  # Required: Always use "cycle" by default
+dataset_id_list = ["uds-fern-absorbed-dugong-251223"]  # Required: Dataset IDs
+command = '''source /opt/venv/bin/activate && python3 train.py'''  # Required: Command to run
+```
+
 ## Dataset Download
 
 The FungiTastic dataset must be downloaded separately:

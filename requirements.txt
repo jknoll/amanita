@@ -7,3 +7,4 @@ albumentations
 scikit-learn
 tqdm
 cycling-utils
+tensorboard

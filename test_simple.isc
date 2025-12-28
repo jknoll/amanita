@@ -1,0 +1,6 @@
+isc_project_id = "prj-proximal-eggplant-fluorine-251225"
+experiment_name = "test_simple"
+gpus = 1
+compute_mode = "cycle"
+dataset_id_list = ["uds-fern-absorbed-dugong-251223"]
+command = '''source /opt/venv/bin/activate && python3 --version && pip list | grep -E "(torch|cycling)" && ls -la /root/amanita/ && ls -la /data/uds-fern-absorbed-dugong-251223/full_300px/metadata/FungiTastic/ | head -5'''

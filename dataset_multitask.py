@@ -4,6 +4,7 @@ Multi-task dataset class for hierarchical taxonomic classification.
 Extends the standard ImageDataset to return labels for all 6 taxonomic ranks.
 """
 
+import os
 import json
 import pandas as pd
 import torch
@@ -20,7 +21,7 @@ class FungiTasticMultiTask(Dataset):
     Returns labels for all 6 taxonomic ranks: phylum, class, order, family, genus, species.
     """
 
-    def __init__(self, df, transform, taxonomic_mappings):
+    def __init__(self, df, transform, taxonomic_mappings, image_root=None, split='train'):
         """
         Initialize multi-task dataset.
 
@@ -28,10 +29,24 @@ class FungiTasticMultiTask(Dataset):
             df: DataFrame with image paths and taxonomic information
             transform: Albumentations transform pipeline
             taxonomic_mappings: Dictionary with name_to_id mappings for each rank
+            image_root: Root directory for images (only needed if df doesn't have 'image_path' column)
+            split: Dataset split ('train', 'val', or 'test') - used to construct image paths
         """
         self.df = df
         self.transform = transform
         self.name_to_id = taxonomic_mappings['name_to_id']
+        self.image_root = image_root
+        self.split = split
+
+        # Check if we need to construct image paths
+        self.has_image_path = 'image_path' in df.columns
+        if not self.has_image_path:
+            if image_root is None:
+                raise ValueError(
+                    "DataFrame does not have 'image_path' column and no image_root was provided. "
+                    "Please provide image_root parameter."
+                )
+            print(f"Dataset will construct image paths from: {image_root}/{split}/300p/")
 
         # Taxonomic ranks in order
         self.taxonomic_ranks = ['phylum', 'class', 'order', 'family', 'genus', 'species']
@@ -53,8 +68,16 @@ class FungiTasticMultiTask(Dataset):
         """
         row = self.df.iloc[idx]
 
+        # Get image path - either from column or construct from filename
+        if self.has_image_path:
+            image_path = row['image_path']
+        else:
+            # Construct path from image_root, split, and filename
+            # FungiTastic structure: <image_root>/<split>/300p/<filename>
+            filename = row['filename']
+            image_path = os.path.join(self.image_root, self.split, '300p', filename)
+
         # Load image
-        image_path = row['image_path']
         image = Image.open(image_path).convert('RGB')
         image = np.array(image)
 
@@ -85,7 +108,8 @@ def create_multitask_dataloaders(
     taxonomic_mappings,
     batch_size=16,
     num_workers=4,
-    image_size=224
+    image_size=224,
+    image_root=None
 ):
     """
     Create training and validation dataloaders for multi-task learning.
@@ -97,6 +121,7 @@ def create_multitask_dataloaders(
         batch_size: Batch size
         num_workers: Number of data loading workers
         image_size: Input image size
+        image_root: Root directory for images (only needed if df doesn't have 'image_path' column)
 
     Returns:
         tuple: (train_loader, val_loader)
@@ -124,8 +149,8 @@ def create_multitask_dataloaders(
     ])
 
     # Create datasets
-    train_dataset = FungiTasticMultiTask(train_df, train_transform, taxonomic_mappings)
-    val_dataset = FungiTasticMultiTask(val_df, val_transform, taxonomic_mappings)
+    train_dataset = FungiTasticMultiTask(train_df, train_transform, taxonomic_mappings, image_root, split='train')
+    val_dataset = FungiTasticMultiTask(val_df, val_transform, taxonomic_mappings, image_root, split='val')
 
     # Custom collate function to handle dictionary labels
     def collate_fn(batch):
