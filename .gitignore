@@ -2,6 +2,7 @@ checkpoints/
 checkpoints_multitask/
 checkpoints_multitask_isc/
 .amanita
+FungiTastic/    
 
 # ISC-specific directories
 runs/
