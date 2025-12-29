@@ -8,10 +8,13 @@ import os
 import json
 import pandas as pd
 import torch
-from PIL import Image
+from PIL import Image, ImageFile
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from torch.utils.data import Dataset, DataLoader
+
+# Allow loading of truncated images
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 class FungiTasticMultiTask(Dataset):
@@ -77,9 +80,15 @@ class FungiTasticMultiTask(Dataset):
             filename = row['filename']
             image_path = os.path.join(self.image_root, self.split, '300p', filename)
 
-        # Load image
-        image = Image.open(image_path).convert('RGB')
-        image = np.array(image)
+        # Load image with error handling for corrupted files
+        try:
+            image = Image.open(image_path).convert('RGB')
+            image = np.array(image)
+        except (OSError, IOError) as e:
+            # Handle corrupted/truncated images
+            print(f"Warning: Corrupted image at {image_path}: {e}")
+            # Return a black placeholder image
+            image = np.zeros((224, 224, 3), dtype=np.uint8)
 
         # Apply transforms
         if self.transform:

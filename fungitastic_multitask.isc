@@ -1,6 +1,6 @@
 isc_project_id = "prj-proximal-eggplant-fluorine-251225"
 experiment_name = "fungitastic_multitask_beit"
-gpus = 12
+gpus = 16
 compute_mode = "interruptible"
 dataset_id_list = ["uds-fern-absorbed-dugong-251223"]
 command = '''source /opt/venv/bin/activate && pip install -q -U cycling-utils && pip uninstall -y scipy && pip install -q "numpy<2" "scipy>=1.11,<1.12" && torchrun --nnodes=$NNODES --nproc-per-node=$N_PROC --master_addr=$MASTER_ADDR --master_port=$MASTER_PORT --node_rank=$NODE_RANK /root/amanita/train_isc_multitask.py --train-path /data/uds-fern-absorbed-dugong-251223/full_300px/metadata/FungiTastic/FungiTastic-Train.csv --val-path /data/uds-fern-absorbed-dugong-251223/full_300px/metadata/FungiTastic/FungiTastic-ClosedSet-Val.csv --test-path /data/uds-fern-absorbed-dugong-251223/full_300px/metadata/FungiTastic/FungiTastic-ClosedSet-Test.csv --image-root /data/uds-fern-absorbed-dugong-251223/full_300px/FungiTastic --mappings-path /root/amanita/taxonomic_mappings.json --class-weights-path /root/amanita/class_weights.pt --model-name hf-hub:BVRA/beit_base_patch16_224.in1k_ft_fungitastic_224 --pretrained --epochs 10 --batch-size 16 --lr 0.0001 --workers 4 --use-class-weights'''

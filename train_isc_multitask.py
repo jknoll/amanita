@@ -366,17 +366,13 @@ def train_epoch(model, train_loader, train_sampler, criterion, optimizer,
     avg_loss = total_loss / num_batches
     local_metrics_dict = local_metrics.compute()
 
-    # Aggregate metrics across all GPUs using MetricsTracker
+    # Return local metrics (master process will report)
     metrics_dict = {
         'loss': avg_loss,
         **local_metrics_dict
     }
 
-    if args.world_size > 1:
-        aggregated_metrics = metrics_tracker.aggregate_metrics(metrics_dict)
-        return aggregated_metrics
-    else:
-        return metrics_dict
+    return metrics_dict
 
 
 def validate(model, val_loader, val_sampler, criterion, device, epoch,
@@ -431,57 +427,73 @@ def validate(model, val_loader, val_sampler, criterion, device, epoch,
     avg_loss = total_loss / num_batches
     local_metrics_dict = local_metrics.compute()
 
+    # Return local metrics (master process will report)
     metrics_dict = {
         'loss': avg_loss,
         **local_metrics_dict
     }
 
-    # Aggregate metrics across all GPUs
-    if args.world_size > 1:
-        aggregated_metrics = metrics_tracker.aggregate_metrics(metrics_dict)
-        return aggregated_metrics
-    else:
-        return metrics_dict
+    return metrics_dict
 
 
 def save_checkpoint(model, optimizer, scheduler, train_sampler, val_sampler,
                    epoch, metrics, saver, args):
     """Save model checkpoint (ISC atomic save or standard torch.save)."""
-    # Only master process saves
-    if not args.is_master:
-        return
-
-    # Get model state dict (unwrap DDP if needed)
-    if args.world_size > 1:
-        model_state = model.module.state_dict()
-    else:
-        model_state = model.state_dict()
-
-    checkpoint = {
-        'epoch': epoch,
-        'model_state_dict': model_state,
-        'optimizer_state_dict': optimizer.state_dict(),
-        'scheduler_state_dict': scheduler.state_dict() if scheduler else None,
-        'metrics': metrics
-    }
-
-    # Add sampler state only if using distributed samplers
-    if IS_DISTRIBUTED and hasattr(train_sampler, 'state_dict'):
-        checkpoint['train_sampler_state'] = train_sampler.state_dict()
-        checkpoint['val_sampler_state'] = val_sampler.state_dict()
-
-    checkpoint_path = f'checkpoint_epoch_{epoch}.pt'
+    checkpoint_filename = f'checkpoint_epoch_{epoch}.pt'
 
     # Save using appropriate method
-    if IS_DISTRIBUTED and CYCLING_UTILS_AVAILABLE and hasattr(saver, 'get_path'):
-        # ISC cluster mode: use atomic save
-        atomic_torch_save(saver, checkpoint, checkpoint_path)
-    else:
-        # Local mode: use standard torch.save
-        full_path = os.path.join(saver, checkpoint_path)
-        torch.save(checkpoint, full_path)
+    if hasattr(saver, 'prepare_checkpoint_directory'):
+        # ISC cluster mode: ALL ranks must participate in collective operations
+        checkpoint_dir = saver.prepare_checkpoint_directory()
 
-    print(f"  Checkpoint saved: {checkpoint_path}")
+        if args.is_master:
+            # Only master creates and saves the checkpoint
+            # Get model state dict (unwrap DDP if needed)
+            if args.world_size > 1:
+                model_state = model.module.state_dict()
+            else:
+                model_state = model.state_dict()
+
+            checkpoint = {
+                'epoch': epoch,
+                'model_state_dict': model_state,
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict() if scheduler else None,
+                'metrics': metrics
+            }
+
+            # Add sampler state only if using distributed samplers
+            if IS_DISTRIBUTED and hasattr(train_sampler, 'state_dict'):
+                checkpoint['train_sampler_state'] = train_sampler.state_dict()
+                checkpoint['val_sampler_state'] = val_sampler.state_dict()
+
+            checkpoint_path = os.path.join(checkpoint_dir, checkpoint_filename)
+            atomic_torch_save(checkpoint, checkpoint_path)
+
+        # ALL ranks must call symlink_latest (has barrier inside)
+        saver.symlink_latest(checkpoint_dir)
+
+        if args.is_master:
+            print(f"  Checkpoint saved: {checkpoint_filename}")
+    else:
+        # Local mode: only master saves (single GPU, no distributed)
+        if not args.is_master:
+            return
+
+        # Get model state dict
+        model_state = model.state_dict()
+
+        checkpoint = {
+            'epoch': epoch,
+            'model_state_dict': model_state,
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict() if scheduler else None,
+            'metrics': metrics
+        }
+
+        checkpoint_path = os.path.join(saver, checkpoint_filename)
+        torch.save(checkpoint, checkpoint_path)
+        print(f"  Checkpoint saved: {checkpoint_filename}")
 
 
 def main():
@@ -555,6 +567,34 @@ def main():
         num_classes, args, device, timer
     )
 
+    # Test checkpoint saving early to fail fast
+    if args.is_master:
+        print("\nTesting checkpoint save mechanism...")
+
+    test_checkpoint = {'epoch': 0, 'test': True}
+    test_filename = 'test_checkpoint.pt'
+
+    if hasattr(saver, 'prepare_checkpoint_directory'):
+        # ISC cluster mode - prepare_checkpoint_directory is collective
+        test_dir = saver.prepare_checkpoint_directory()
+
+        if args.is_master:
+            # Only master saves the file
+            test_path = os.path.join(test_dir, test_filename)
+            atomic_torch_save(test_checkpoint, test_path)
+
+        # ALL ranks must call symlink_latest (has barrier inside)
+        saver.symlink_latest(test_dir)
+    else:
+        # Local mode - only runs on single GPU
+        if args.is_master:
+            test_path = os.path.join(saver, test_filename)
+            torch.save(test_checkpoint, test_path)
+
+    if args.is_master:
+        print("  ✓ Checkpoint save test successful")
+        timer.report("Tested checkpoint saving")
+
     # Training loop
     if args.is_master:
         print("\n" + "=" * 60)
@@ -617,32 +657,59 @@ def main():
             epoch, val_metrics, saver, args
         )
 
-        # Save best model
-        if args.is_master and val_metrics['avg_f1'] > best_val_f1:
+        # Save best model - check if this is the best
+        is_new_best = args.is_master and val_metrics['avg_f1'] > best_val_f1
+
+        if is_new_best:
             best_val_f1 = val_metrics['avg_f1']
             best_epoch = epoch
 
-            # Save best model
-            if args.world_size > 1:
-                model_state = model.module.state_dict()
-            else:
+        # In ISC mode, ALL ranks must participate even if not new best
+        if hasattr(saver, 'prepare_checkpoint_directory'):
+            # ISC cluster mode: ALL ranks participate in collective operations
+            best_dir = saver.prepare_checkpoint_directory()
+
+            if is_new_best:
+                # Only master saves when it's actually a new best
+                if args.world_size > 1:
+                    model_state = model.module.state_dict()
+                else:
+                    model_state = model.state_dict()
+
+                best_checkpoint = {
+                    'epoch': epoch,
+                    'model_state_dict': model_state,
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'scheduler_state_dict': scheduler.state_dict() if scheduler else None,
+                    'metrics': val_metrics
+                }
+
+                best_filename = 'best_model.pt'
+                best_path = os.path.join(best_dir, best_filename)
+                atomic_torch_save(best_checkpoint, best_path)
+
+            # ALL ranks call symlink_latest
+            saver.symlink_latest(best_dir)
+
+            if is_new_best:
+                print(f"  ★ New best model! (F1: {best_val_f1:.2%})")
+        else:
+            # Local mode: only master saves if it's new best
+            if is_new_best:
                 model_state = model.state_dict()
 
-            best_checkpoint = {
-                'epoch': epoch,
-                'model_state_dict': model_state,
-                'optimizer_state_dict': optimizer.state_dict(),
-                'scheduler_state_dict': scheduler.state_dict() if scheduler else None,
-                'metrics': val_metrics
-            }
+                best_checkpoint = {
+                    'epoch': epoch,
+                    'model_state_dict': model_state,
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'scheduler_state_dict': scheduler.state_dict() if scheduler else None,
+                    'metrics': val_metrics
+                }
 
-            # Save best model using appropriate method
-            if IS_DISTRIBUTED and CYCLING_UTILS_AVAILABLE and hasattr(saver, 'get_path'):
-                atomic_torch_save(saver, best_checkpoint, 'best_model.pt')
-            else:
-                torch.save(best_checkpoint, os.path.join(saver, 'best_model.pt'))
-
-            print(f"  ★ New best model! (F1: {best_val_f1:.2%})")
+                best_filename = 'best_model.pt'
+                best_path = os.path.join(saver, best_filename)
+                torch.save(best_checkpoint, best_path)
+                print(f"  ★ New best model! (F1: {best_val_f1:.2%})")
 
     if args.is_master:
         print("\n" + "=" * 60)
