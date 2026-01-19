@@ -119,6 +119,10 @@ def parse_args():
                         help='Number of data loading workers')
     parser.add_argument('--use-class-weights', action='store_true', default=False,
                         help='Use class balancing weights in loss')
+    parser.add_argument('--resume', action='store_true', default=False,
+                        help='Resume from latest checkpoint if available')
+    parser.add_argument('--checkpoint-path', type=str, default=None,
+                        help='Explicit path to checkpoint file to resume from (overrides --resume)')
 
     # Distributed training arguments (ISC-specific)
     parser.add_argument('--local_rank', type=int, default=0,
@@ -496,6 +500,118 @@ def save_checkpoint(model, optimizer, scheduler, train_sampler, val_sampler,
         print(f"  Checkpoint saved: {checkpoint_filename}")
 
 
+def load_checkpoint(model, optimizer, scheduler, train_sampler, val_sampler, saver, args):
+    """
+    Load checkpoint if available.
+
+    Returns:
+        tuple: (start_epoch, best_val_f1, best_epoch) or (0, 0.0, 0) if no checkpoint
+    """
+    checkpoint_path = None
+
+    # Check for explicit checkpoint path first
+    if args.checkpoint_path:
+        checkpoint_path = args.checkpoint_path
+        if args.is_master:
+            print(f"Using explicit checkpoint path: {checkpoint_path}")
+    else:
+        # Find latest checkpoint automatically
+        if hasattr(saver, 'prepare_checkpoint_directory'):
+            # ISC mode: Look for latest symlink or AtomicDirectory checkpoints
+            checkpoint_dir = None
+
+            # Try 'latest' symlink first
+            latest_link = os.path.join(saver.output_directory, 'latest')
+            if os.path.islink(latest_link) and os.path.exists(latest_link):
+                checkpoint_dir = latest_link
+
+            # If latest symlink doesn't work, look for AtomicDirectory.latest_checkpoint
+            if checkpoint_dir is None:
+                atomic_latest = os.path.join(saver.output_directory, 'AtomicDirectory.latest_checkpoint')
+                if os.path.islink(atomic_latest) and os.path.exists(atomic_latest):
+                    checkpoint_dir = atomic_latest
+
+            # If symlinks are broken, find the latest AtomicDirectory_checkpoint_* directory
+            if checkpoint_dir is None:
+                atomic_dirs = []
+                if os.path.isdir(saver.output_directory):
+                    for name in os.listdir(saver.output_directory):
+                        if name.startswith('AtomicDirectory_checkpoint_'):
+                            full_path = os.path.join(saver.output_directory, name)
+                            if os.path.isdir(full_path):
+                                # Extract checkpoint number for sorting
+                                try:
+                                    checkpoint_num = int(name.split('_')[-1])
+                                    atomic_dirs.append((checkpoint_num, full_path))
+                                except ValueError:
+                                    pass
+
+                    if atomic_dirs:
+                        # Sort by checkpoint number and take the highest
+                        atomic_dirs.sort(reverse=True)
+                        checkpoint_dir = atomic_dirs[0][1]
+                        if args.is_master:
+                            print(f"Found latest checkpoint directory: {os.path.basename(checkpoint_dir)}")
+
+            # Now look for checkpoint files in the directory
+            if checkpoint_dir and os.path.isdir(checkpoint_dir):
+                # Find checkpoint file (prefer checkpoint_epoch_*.pt, fallback to best_model.pt)
+                checkpoint_files = [f for f in os.listdir(checkpoint_dir) if f.startswith('checkpoint_epoch_') and f.endswith('.pt')]
+                if checkpoint_files:
+                    checkpoint_path = os.path.join(checkpoint_dir, checkpoint_files[0])
+                elif os.path.exists(os.path.join(checkpoint_dir, 'best_model.pt')):
+                    checkpoint_path = os.path.join(checkpoint_dir, 'best_model.pt')
+        else:
+            # Local mode: Look for latest checkpoint in directory
+            if os.path.isdir(saver):
+                checkpoint_files = sorted([f for f in os.listdir(saver) if f.startswith('checkpoint_epoch_') and f.endswith('.pt')])
+                if checkpoint_files:
+                    checkpoint_path = os.path.join(saver, checkpoint_files[-1])
+                elif os.path.exists(os.path.join(saver, 'best_model.pt')):
+                    checkpoint_path = os.path.join(saver, 'best_model.pt')
+
+    if checkpoint_path is None or not os.path.exists(checkpoint_path):
+        if args.is_master:
+            print("No checkpoint found. Starting from scratch.")
+        return 0, 0.0, 0
+
+    if args.is_master:
+        print(f"\nLoading checkpoint from: {checkpoint_path}")
+
+    # Load checkpoint
+    checkpoint = torch.load(checkpoint_path, map_location='cpu')
+
+    # Restore model state
+    if args.world_size > 1:
+        model.module.load_state_dict(checkpoint['model_state_dict'])
+    else:
+        model.load_state_dict(checkpoint['model_state_dict'])
+
+    # Restore optimizer and scheduler
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    if scheduler and checkpoint.get('scheduler_state_dict'):
+        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+
+    # Restore sampler states if available
+    if IS_DISTRIBUTED and 'train_sampler_state' in checkpoint:
+        if hasattr(train_sampler, 'load_state_dict'):
+            train_sampler.load_state_dict(checkpoint['train_sampler_state'])
+        if hasattr(val_sampler, 'load_state_dict'):
+            val_sampler.load_state_dict(checkpoint['val_sampler_state'])
+
+    start_epoch = checkpoint['epoch'] + 1  # Resume from next epoch
+
+    # Try to get best metrics from checkpoint
+    metrics = checkpoint.get('metrics', {})
+    best_val_f1 = metrics.get('avg_f1', 0.0)
+
+    if args.is_master:
+        print(f"  Resuming from epoch {checkpoint['epoch']}")
+        print(f"  Best val F1 so far: {best_val_f1:.2%}")
+
+    return start_epoch, best_val_f1, checkpoint['epoch']
+
+
 def main():
     """Main training loop for ISC cluster."""
     args = parse_args()
@@ -595,16 +711,28 @@ def main():
         print("  ✓ Checkpoint save test successful")
         timer.report("Tested checkpoint saving")
 
-    # Training loop
-    if args.is_master:
-        print("\n" + "=" * 60)
-        print(f"Starting training for {args.epochs} epochs")
-        print("=" * 60)
-
+    # Load checkpoint if resuming
+    start_epoch = 1
     best_val_f1 = 0.0
     best_epoch = 0
 
-    for epoch in range(1, args.epochs + 1):
+    if args.resume:
+        start_epoch, best_val_f1, best_epoch = load_checkpoint(
+            model, optimizer, scheduler, train_sampler, val_sampler, saver, args
+        )
+        if args.is_master:
+            timer.report("Loaded checkpoint")
+
+    # Training loop
+    if args.is_master:
+        print("\n" + "=" * 60)
+        if start_epoch == 1:
+            print(f"Starting training for {args.epochs} epochs")
+        else:
+            print(f"Resuming training from epoch {start_epoch}/{args.epochs}")
+        print("=" * 60)
+
+    for epoch in range(start_epoch, args.epochs + 1):
         if args.is_master:
             print(f"\nEpoch {epoch}/{args.epochs}")
             print("-" * 60)
