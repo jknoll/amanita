@@ -1,3 +1,6 @@
+# Strong compute /shared/artifacts/[experiment_name] files, i.e. checkpoints, training stdout logs, tensorflow logs
+artifacts
+
 checkpoints/
 checkpoints_multitask/
 checkpoints_multitask_isc/
@@ -88,6 +91,8 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*_executed.ipynb
+validation_results/*.pkl
 
 # IPython
 profile_default/

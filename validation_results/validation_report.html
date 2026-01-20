@@ -1,0 +1,214 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Validation Report - Multi-Task BEiT Fungi Classification</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f5f5f5; }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        h3 { color: #7f8c8d; }
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; background: white; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #3498db; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f1f1f1; }
+        .metric-good { color: #27ae60; font-weight: bold; }
+        .metric-medium { color: #f39c12; font-weight: bold; }
+        .metric-poor { color: #e74c3c; font-weight: bold; }
+        .key-finding { background-color: #e8f6f3; border-left: 4px solid #1abc9c; padding: 15px; margin: 20px 0; }
+        .warning { background-color: #fdf2e9; border-left: 4px solid #e67e22; padding: 15px; margin: 20px 0; }
+        .image-container { text-align: center; margin: 20px 0; }
+        img { max-width: 100%; height: auto; border: 1px solid #ddd; }
+        .summary-box { background: white; padding: 20px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>Validation Report: Multi-Task BEiT for Hierarchical Fungi Classification</h1>
+
+    <div class="summary-box">
+        <h2>Summary</h2>
+        <p><strong>Model:</strong> BEiT Multi-Task (6 classification heads)</p>
+        <p><strong>Validation Samples:</strong> 89,659</p>
+        <p><strong>Hierarchical Accuracy:</strong> <span class="metric-medium">30.29%</span></p>
+    </div>
+
+    <h2>Per-Rank Metrics</h2>
+    <table>
+        <tr>
+            <th>Rank</th>
+            <th>Top-1 Accuracy</th>
+            <th>Top-5 Accuracy</th>
+            <th>Precision</th>
+            <th>Recall</th>
+            <th>F1 (Macro)</th>
+            <th>Avg Confidence</th>
+        </tr>
+
+        <tr>
+            <td><strong>Phylum</strong></td>
+            <td class="metric-good">89.91%</td>
+            <td>99.97%</td>
+            <td>66.82%</td>
+            <td>65.73%</td>
+            <td>62.66%</td>
+            <td>0.956</td>
+        </tr>
+
+        <tr>
+            <td><strong>Class</strong></td>
+            <td class="metric-good">85.87%</td>
+            <td>97.73%</td>
+            <td>52.89%</td>
+            <td>55.57%</td>
+            <td>51.25%</td>
+            <td>0.934</td>
+        </tr>
+
+        <tr>
+            <td><strong>Order</strong></td>
+            <td class="metric-medium">70.57%</td>
+            <td>91.99%</td>
+            <td>44.31%</td>
+            <td>44.88%</td>
+            <td>40.44%</td>
+            <td>0.833</td>
+        </tr>
+
+        <tr>
+            <td><strong>Family</strong></td>
+            <td class="metric-medium">55.74%</td>
+            <td>81.40%</td>
+            <td>41.47%</td>
+            <td>39.77%</td>
+            <td>36.88%</td>
+            <td>0.709</td>
+        </tr>
+
+        <tr>
+            <td><strong>Genus</strong></td>
+            <td class="metric-medium">52.02%</td>
+            <td>76.08%</td>
+            <td>35.41%</td>
+            <td>33.16%</td>
+            <td>30.52%</td>
+            <td>0.656</td>
+        </tr>
+
+        <tr>
+            <td><strong>Species</strong></td>
+            <td class="metric-poor">45.43%</td>
+            <td>69.12%</td>
+            <td>28.95%</td>
+            <td>24.90%</td>
+            <td>23.38%</td>
+            <td>0.548</td>
+        </tr>
+    </table>
+
+    <h2>Confidence Distributions</h2>
+    <div class="image-container">
+        <img src="confidence_distributions.png" alt="Confidence Distributions">
+    </div>
+
+    <h2>Confusion Matrices</h2>
+    <h3>Phylum (7 classes)</h3>
+    <div class="image-container">
+        <img src="confusion_matrix_phylum.png" alt="Confusion Matrix - Phylum">
+    </div>
+
+    <h3>Class (28 classes)</h3>
+    <div class="image-container">
+        <img src="confusion_matrix_class.png" alt="Confusion Matrix - Class">
+    </div>
+
+    <h2>Amanita phalloides (Death Cap) Analysis</h2>
+    <div class="warning">
+        <strong>Important:</strong> Amanita phalloides is one of the most poisonous mushrooms. 
+        Accurate identification is critical for public safety.
+    </div>
+
+    <table>
+        <tr>
+            <th>Taxonomic Rank</th>
+            <th>Expected Value</th>
+            <th>Correct</th>
+            <th>Total</th>
+            <th>Accuracy</th>
+        </tr>
+
+        <tr>
+            <td><strong>Phylum</strong></td>
+            <td>Basidiomycota</td>
+            <td>133</td>
+            <td>135</td>
+            <td class="metric-good">98.52%</td>
+        </tr>
+
+        <tr>
+            <td><strong>Class</strong></td>
+            <td>Agaricomycetes</td>
+            <td>133</td>
+            <td>135</td>
+            <td class="metric-good">98.52%</td>
+        </tr>
+
+        <tr>
+            <td><strong>Order</strong></td>
+            <td>Agaricales</td>
+            <td>83</td>
+            <td>135</td>
+            <td class="metric-medium">61.48%</td>
+        </tr>
+
+        <tr>
+            <td><strong>Family</strong></td>
+            <td>Amanitaceae</td>
+            <td>60</td>
+            <td>135</td>
+            <td class="metric-poor">44.44%</td>
+        </tr>
+
+        <tr>
+            <td><strong>Genus</strong></td>
+            <td>Amanita</td>
+            <td>43</td>
+            <td>135</td>
+            <td class="metric-poor">31.85%</td>
+        </tr>
+
+        <tr>
+            <td><strong>Species</strong></td>
+            <td>Amanita phalloides</td>
+            <td>58</td>
+            <td>135</td>
+            <td class="metric-poor">42.96%</td>
+        </tr>
+
+    </table>
+
+    <div class="key-finding">
+        <h3>Key Finding</h3>
+        <p><strong>Species-level recognition:</strong> 42.96%</p>
+        <p><strong>Genus-level recognition (Amanita):</strong> 31.85%</p>
+        <p>Even when the exact species is misidentified, the model correctly identifies 
+           the genus as Amanita in 31.85% of cases, which is valuable for 
+           flagging potentially dangerous specimens.</p>
+    </div>
+
+    <h2>Specimen Examples</h2>
+    <h3>Well-Recognized Specimens</h3>
+    <div class="image-container">
+        <img src="well_recognized_specimens.png" alt="Well-Recognized Specimens">
+    </div>
+
+    <h3>Poorly-Recognized Specimens</h3>
+    <div class="image-container">
+        <img src="poorly_recognized_specimens.png" alt="Poorly-Recognized Specimens">
+    </div>
+
+    <footer style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #7f8c8d;">
+        <p>Generated by validation_notebook.ipynb</p>
+    </footer>
+</body>
+</html>
