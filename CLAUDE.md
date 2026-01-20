@@ -264,3 +264,13 @@ Located in `FungiTastic/metadata_extraction/`:
 - `captions/`: Extract image captions using vision-language models
 - `tabular/`: Extract elevation and land cover data
 - `satellite/`: Extract Sentinel satellite data and ecodatacube features
+
+## Session Handoff and Pickup
+
+For cross-host session continuity, use the custom skills:
+
+- **`/handoff`**: Saves session state to `HANDOFF.md`, commits, and pushes. Use when ending a session that you want to continue on another machine.
+
+- **`/pickup`**: Pulls latest changes, reads `HANDOFF.md`, and restores context. Use when starting work on a new host after a handoff.
+
+Skills are defined in `.claude/skills/`.
