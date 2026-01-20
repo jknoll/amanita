@@ -12,6 +12,83 @@ Modify the BEiT model to predict hierarchical taxonomic ranks:
 - **Current**: Species only (2829 classes)
 - **Target**: Phylum, Class, Order, Family, Genus, Species (multi-task classification)
 
+## Validation Results
+
+The multi-task BEiT model has been trained and evaluated on **89,659 validation samples**. Below is a summary of the results.
+
+### Per-Rank Performance
+
+| Rank | Top-1 Accuracy | Top-5 Accuracy | F1 (Macro) | Avg Confidence |
+|------|----------------|----------------|------------|----------------|
+| Phylum | **89.91%** | 99.97% | 62.66% | 0.956 |
+| Class | **85.87%** | 97.73% | 51.25% | 0.934 |
+| Order | 70.57% | 91.99% | 40.44% | 0.833 |
+| Family | 55.74% | 81.40% | 36.88% | 0.709 |
+| Genus | 52.02% | 76.08% | 30.52% | 0.656 |
+| Species | 45.43% | 69.12% | 23.38% | 0.548 |
+
+**Hierarchical Accuracy** (all 6 ranks correct): **30.29%**
+
+### Comparison with Stock Model
+
+| Metric | Stock BEiT 224 | Multi-task BEiT | Delta |
+|--------|----------------|-----------------|-------|
+| Species Top-1 Accuracy | **70.2%** | 45.43% | -24.8% |
+| Species Macro F1 | **39.8%** | 23.38% | -16.4% |
+
+The multi-task model shows significant degradation at species-level compared to the single-task baseline. This is an active area for improvement.
+
+### Confidence Distributions
+
+Model confidence decreases at finer taxonomic levels, as expected:
+
+![Confidence Distributions](validation_results/confidence_distributions.png)
+
+### Confusion Matrices
+
+#### Phylum Level (7 classes)
+![Confusion Matrix - Phylum](validation_results/confusion_matrix_phylum.png)
+
+#### Class Level (28 classes)
+![Confusion Matrix - Class](validation_results/confusion_matrix_class.png)
+
+### Amanita phalloides (Death Cap) Analysis
+
+Accurate identification of deadly species is critical. Performance on the 135 Death Cap specimens in the validation set:
+
+| Taxonomic Rank | Expected Value | Accuracy |
+|----------------|----------------|----------|
+| Phylum | Basidiomycota | **98.52%** |
+| Class | Agaricomycetes | **98.52%** |
+| Order | Agaricales | 61.48% |
+| Family | Amanitaceae | 44.44% |
+| Genus | Amanita | 31.85% |
+| Species | Amanita phalloides | 42.96% |
+
+The model struggles at genus and species levels for this critical species.
+
+![Amanita phalloides Analysis](validation_results/amanita_phalloides_analysis.png)
+
+### Specimen Examples
+
+#### Well-Recognized Specimens
+![Well-Recognized Specimens](validation_results/well_recognized_specimens.png)
+
+#### Poorly-Recognized Specimens
+![Poorly-Recognized Specimens](validation_results/poorly_recognized_specimens.png)
+
+### Key Findings & Next Steps
+
+1. **Severe overfitting observed**: Train/val F1 gap of ~28%
+2. **Species performance degraded**: -25% vs stock model
+3. **Hierarchical consistency issues**: Model sometimes predicts species correctly but genus incorrectly
+
+**Recommended improvements**:
+- Implement early stopping at epoch 2-3 based on val_loss
+- Increase species loss weight in multi-task objective
+- Add hierarchical consistency constraints
+- Apply stronger regularization (dropout, weight decay)
+
 ## Environment Setup
 
 ### Option 1: ISC Environment (Strong Compute)
@@ -231,7 +308,10 @@ pip install -r FungiTastic/baselines/closed_set/requirements.txt
 ## Milestones
 
 - [x] **Milestone 1**: Establish baseline training pipeline with BEiT model
-- [ ] **Milestone 2**: Modify architecture for multi-task taxonomic prediction
-- [ ] **Milestone 3**: Implement hierarchical loss function
+- [x] **Milestone 2**: Modify architecture for multi-task taxonomic prediction
+- [x] **Milestone 3**: Train multi-task model on ISC cluster (14 experiments)
+- [x] **Milestone 4**: Validate model and analyze results
+- [ ] **Milestone 5**: Improve species-level accuracy (currently 45% vs 70% baseline)
+- [ ] **Milestone 6**: Implement hierarchical consistency constraints
 
 See `milestones.md` for detailed progress tracking.
