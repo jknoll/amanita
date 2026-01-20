@@ -1,6 +1,9 @@
 # Strong compute /shared/artifacts/[experiment_name] files, i.e. checkpoints, training stdout logs, tensorflow logs
 artifacts
 
+# Local analysis files
+comparison-with-stock-model.md
+
 checkpoints/
 checkpoints_multitask/
 checkpoints_multitask_isc/
