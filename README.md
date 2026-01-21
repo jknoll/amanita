@@ -44,13 +44,29 @@ Model confidence decreases at finer taxonomic levels, as expected:
 
 ![Confidence Distributions](validation_results/confidence_distributions.png)
 
-### Confusion Matrices
+### Confusion Matrices (Row-Normalized, Viridis)
 
-#### Phylum Level (7 classes)
-![Confusion Matrix - Phylum](validation_results/confusion_matrix_phylum.png)
+These matrices show what proportion of each true class gets predicted as each other class. The viridis colormap highlights the diagonal (correct predictions) and off-diagonal confusion patterns.
 
-#### Class Level (28 classes)
-![Confusion Matrix - Class](validation_results/confusion_matrix_class.png)
+**Note**: The dataset has extreme class imbalance (79% Basidiomycota at phylum level, 75% Agaricomycetes at class level), which is why row-normalization is essential for visualizing confusion patterns.
+
+#### Phylum (7 classes)
+![Confusion Matrix - Phylum](validation_results/confusion_matrix_phylum_normalized_viridis.png)
+
+#### Class (28 classes)
+![Confusion Matrix - Class](validation_results/confusion_matrix_class_normalized_viridis.png)
+
+#### Order (95 classes)
+![Confusion Matrix - Order](validation_results/confusion_matrix_order_normalized_viridis.png)
+
+#### Family (308 classes)
+![Confusion Matrix - Family](validation_results/confusion_matrix_family_normalized_viridis.png)
+
+#### Genus (918 classes)
+![Confusion Matrix - Genus](validation_results/confusion_matrix_genus_normalized_viridis.png)
+
+#### Species (2786 classes)
+![Confusion Matrix - Species](validation_results/confusion_matrix_species_normalized_viridis.png)
 
 ### Amanita phalloides (Death Cap) Analysis
 
@@ -88,6 +104,8 @@ The model struggles at genus and species levels for this critical species.
 - Increase species loss weight in multi-task objective
 - Add hierarchical consistency constraints
 - Apply stronger regularization (dropout, weight decay)
+
+See `validation_results/validation_report.html` for the full validation report.
 
 ## Environment Setup
 
