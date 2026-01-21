@@ -111,15 +111,38 @@
         <img src="confidence_distributions.png" alt="Confidence Distributions">
     </div>
 
-    <h2>Confusion Matrices</h2>
+    <h2>Confusion Matrices (Row-Normalized, Viridis)</h2>
+    <p>These matrices show what proportion of each true class gets predicted as each other class.
+    Row-normalization is essential due to extreme class imbalance (79% Basidiomycota at phylum level, 75% Agaricomycetes at class level).</p>
+
     <h3>Phylum (7 classes)</h3>
     <div class="image-container">
-        <img src="confusion_matrix_phylum.png" alt="Confusion Matrix - Phylum">
+        <img src="confusion_matrix_phylum_normalized_viridis.png" alt="Confusion Matrix - Phylum">
     </div>
 
     <h3>Class (28 classes)</h3>
     <div class="image-container">
-        <img src="confusion_matrix_class.png" alt="Confusion Matrix - Class">
+        <img src="confusion_matrix_class_normalized_viridis.png" alt="Confusion Matrix - Class">
+    </div>
+
+    <h3>Order (95 classes)</h3>
+    <div class="image-container">
+        <img src="confusion_matrix_order_normalized_viridis.png" alt="Confusion Matrix - Order">
+    </div>
+
+    <h3>Family (308 classes)</h3>
+    <div class="image-container">
+        <img src="confusion_matrix_family_normalized_viridis.png" alt="Confusion Matrix - Family">
+    </div>
+
+    <h3>Genus (918 classes)</h3>
+    <div class="image-container">
+        <img src="confusion_matrix_genus_normalized_viridis.png" alt="Confusion Matrix - Genus">
+    </div>
+
+    <h3>Species (2786 classes)</h3>
+    <div class="image-container">
+        <img src="confusion_matrix_species_normalized_viridis.png" alt="Confusion Matrix - Species">
     </div>
 
     <h2>Amanita phalloides (Death Cap) Analysis</h2>
