@@ -259,30 +259,8 @@ This will:
 - **Efficient Training**: GPU-accelerated with mixed precision support
 - **Flexible Data Loading**: Works with full dataset or minimal subsets
 - **Progress Tracking**: Built-in metrics (loss, accuracy, F1 score)
-
-Usage Example:
-
-  # 1. Update project ID in fungitastic_multitask.isc
-  #    Change "<project-id>" to your actual ISC project ID
-
-  # 2. Launch training job
-  isc train fungitastic_multitask.isc
-
-  # 3. Monitor progress
-  isc status
-  isc logs <job-id>
-
-  # 4. Download checkpoints when complete
-  isc download <job-id>
-
-  Key Features:
-
-  - ✅ Cycle mode enabled (cost-efficient preemptible instances)
-  - ✅ Dataset by ID (uds-fern-absorbed-dugong-251223)
-  - ✅ 4 GPUs configured (effective batch size: 64)
-  - ✅ Complete command with all necessary arguments
-  - ✅ Class balancing enabled via --use-class-weights
-  - ✅ 10 epochs training configuration
+- **Cycle Mode**: Cost-efficient preemptible instances on ISC
+- **Class Balancing**: Weighted loss for imbalanced species distribution
 
 ## Troubleshooting
 
