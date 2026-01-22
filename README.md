@@ -50,23 +50,20 @@ These matrices show what proportion of each true class gets predicted as each ot
 
 **Note**: The dataset has extreme class imbalance (79% Basidiomycota at phylum level, 75% Agaricomycetes at class level), which is why row-normalization is essential for visualizing confusion patterns.
 
-#### Phylum (7 classes)
-![Confusion Matrix - Phylum](validation_results/confusion_matrix_phylum_normalized_viridis.png)
+*Click any image to view full size.*
 
-#### Class (28 classes)
-![Confusion Matrix - Class](validation_results/confusion_matrix_class_normalized_viridis.png)
-
-#### Order (95 classes)
-![Confusion Matrix - Order](validation_results/confusion_matrix_order_normalized_viridis.png)
-
-#### Family (308 classes)
-![Confusion Matrix - Family](validation_results/confusion_matrix_family_normalized_viridis.png)
-
-#### Genus (918 classes)
-![Confusion Matrix - Genus](validation_results/confusion_matrix_genus_normalized_viridis.png)
-
-#### Species (2786 classes)
-![Confusion Matrix - Species](validation_results/confusion_matrix_species_normalized_viridis.png)
+<table>
+<tr>
+<td align="center"><strong>Phylum</strong><br>(7 classes)<br><a href="validation_results/confusion_matrix_phylum_normalized_viridis.png"><img src="validation_results/confusion_matrix_phylum_normalized_viridis.png" width="280" alt="Phylum"></a></td>
+<td align="center"><strong>Class</strong><br>(28 classes)<br><a href="validation_results/confusion_matrix_class_normalized_viridis.png"><img src="validation_results/confusion_matrix_class_normalized_viridis.png" width="280" alt="Class"></a></td>
+<td align="center"><strong>Order</strong><br>(95 classes)<br><a href="validation_results/confusion_matrix_order_normalized_viridis.png"><img src="validation_results/confusion_matrix_order_normalized_viridis.png" width="280" alt="Order"></a></td>
+</tr>
+<tr>
+<td align="center"><strong>Family</strong><br>(308 classes)<br><a href="validation_results/confusion_matrix_family_normalized_viridis.png"><img src="validation_results/confusion_matrix_family_normalized_viridis.png" width="280" alt="Family"></a></td>
+<td align="center"><strong>Genus</strong><br>(918 classes)<br><a href="validation_results/confusion_matrix_genus_normalized_viridis.png"><img src="validation_results/confusion_matrix_genus_normalized_viridis.png" width="280" alt="Genus"></a></td>
+<td align="center"><strong>Species</strong><br>(2786 classes)<br><a href="validation_results/confusion_matrix_species_normalized_viridis.png"><img src="validation_results/confusion_matrix_species_normalized_viridis.png" width="280" alt="Species"></a></td>
+</tr>
+</table>
 
 ### Amanita phalloides (Death Cap) Analysis
 
@@ -105,7 +102,7 @@ The model struggles at genus and species levels for this critical species.
 - Add hierarchical consistency constraints
 - Apply stronger regularization (dropout, weight decay)
 
-See `validation_results/validation_report.html` for the full validation report.
+**[View Full Validation Report](validation_results/validation_report.html)** for detailed analysis including specimen examples and additional visualizations.
 
 ## Environment Setup
 
