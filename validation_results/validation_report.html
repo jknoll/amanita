@@ -21,6 +21,93 @@
         .image-container { text-align: center; margin: 20px 0; }
         img { max-width: 100%; height: auto; border: 1px solid #ddd; }
         .summary-box { background: white; padding: 20px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin: 20px 0; }
+
+        /* 2x3 Grid for confusion matrices */
+        .cm-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .cm-cell {
+            text-align: center;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .cm-cell:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .cm-cell h4 {
+            margin: 0 0 8px 0;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        .cm-cell img {
+            width: 100%;
+            height: auto;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .cm-cell .classes {
+            font-size: 11px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        /* Lightbox modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            cursor: pointer;
+        }
+        .modal-content {
+            display: block;
+            max-width: 95%;
+            max-height: 95%;
+            margin: auto;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid #fff;
+            border-radius: 5px;
+        }
+        .modal-title {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 35px;
+            color: #fff;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-modal:hover { color: #ccc; }
     </style>
 </head>
 <body>
@@ -114,35 +201,52 @@
     <h2>Confusion Matrices (Row-Normalized, Viridis)</h2>
     <p>These matrices show what proportion of each true class gets predicted as each other class.
     Row-normalization is essential due to extreme class imbalance (79% Basidiomycota at phylum level, 75% Agaricomycetes at class level).</p>
+    <p style="color: #7f8c8d; font-size: 13px;"><em>Click any image to view full size.</em></p>
 
-    <h3>Phylum (7 classes)</h3>
-    <div class="image-container">
-        <img src="confusion_matrix_phylum_normalized_viridis.png" alt="Confusion Matrix - Phylum">
+    <div class="cm-grid">
+        <div class="cm-cell">
+            <h4>Phylum</h4>
+            <img src="confusion_matrix_phylum_normalized_viridis.png" alt="Confusion Matrix - Phylum"
+                 onclick="openModal(this.src, 'Phylum (7 classes) - Acc: 89.91%')">
+            <div class="classes">7 classes</div>
+        </div>
+        <div class="cm-cell">
+            <h4>Class</h4>
+            <img src="confusion_matrix_class_normalized_viridis.png" alt="Confusion Matrix - Class"
+                 onclick="openModal(this.src, 'Class (28 classes) - Acc: 85.87%')">
+            <div class="classes">28 classes</div>
+        </div>
+        <div class="cm-cell">
+            <h4>Order</h4>
+            <img src="confusion_matrix_order_normalized_viridis.png" alt="Confusion Matrix - Order"
+                 onclick="openModal(this.src, 'Order (95 classes) - Acc: 70.57%')">
+            <div class="classes">95 classes</div>
+        </div>
+        <div class="cm-cell">
+            <h4>Family</h4>
+            <img src="confusion_matrix_family_normalized_viridis.png" alt="Confusion Matrix - Family"
+                 onclick="openModal(this.src, 'Family (308 classes) - Acc: 55.74%')">
+            <div class="classes">308 classes</div>
+        </div>
+        <div class="cm-cell">
+            <h4>Genus</h4>
+            <img src="confusion_matrix_genus_normalized_viridis.png" alt="Confusion Matrix - Genus"
+                 onclick="openModal(this.src, 'Genus (918 classes) - Acc: 52.02%')">
+            <div class="classes">918 classes</div>
+        </div>
+        <div class="cm-cell">
+            <h4>Species</h4>
+            <img src="confusion_matrix_species_normalized_viridis.png" alt="Confusion Matrix - Species"
+                 onclick="openModal(this.src, 'Species (2786 classes) - Acc: 45.43%')">
+            <div class="classes">2786 classes</div>
+        </div>
     </div>
 
-    <h3>Class (28 classes)</h3>
-    <div class="image-container">
-        <img src="confusion_matrix_class_normalized_viridis.png" alt="Confusion Matrix - Class">
-    </div>
-
-    <h3>Order (95 classes)</h3>
-    <div class="image-container">
-        <img src="confusion_matrix_order_normalized_viridis.png" alt="Confusion Matrix - Order">
-    </div>
-
-    <h3>Family (308 classes)</h3>
-    <div class="image-container">
-        <img src="confusion_matrix_family_normalized_viridis.png" alt="Confusion Matrix - Family">
-    </div>
-
-    <h3>Genus (918 classes)</h3>
-    <div class="image-container">
-        <img src="confusion_matrix_genus_normalized_viridis.png" alt="Confusion Matrix - Genus">
-    </div>
-
-    <h3>Species (2786 classes)</h3>
-    <div class="image-container">
-        <img src="confusion_matrix_species_normalized_viridis.png" alt="Confusion Matrix - Species">
+    <!-- Modal for full-size images -->
+    <div id="imageModal" class="modal" onclick="closeModal()">
+        <span class="close-modal">&times;</span>
+        <img class="modal-content" id="modalImage">
+        <div class="modal-title" id="modalTitle"></div>
     </div>
 
     <h2>Amanita phalloides (Death Cap) Analysis</h2>
@@ -233,5 +337,24 @@
     <footer style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #7f8c8d;">
         <p>Generated by validation_notebook.ipynb</p>
     </footer>
+
+    <script>
+        function openModal(src, title) {
+            document.getElementById('imageModal').style.display = 'block';
+            document.getElementById('modalImage').src = src;
+            document.getElementById('modalTitle').textContent = title;
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
+    </script>
 </body>
 </html>
