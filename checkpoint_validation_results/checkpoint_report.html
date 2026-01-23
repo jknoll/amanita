@@ -1,0 +1,475 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Checkpoint Validation Report</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 40px; background-color: #f8f9fa; }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; border-bottom: 1px solid #bdc3c7; padding-bottom: 5px; }
+        h3 { color: #7f8c8d; }
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        th, td { border: 1px solid #e1e1e1; padding: 12px; text-align: left; }
+        th { background-color: #3498db; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f1f1f1; }
+        .best { background-color: #d4edda !important; border-left: 4px solid #28a745; }
+        .prev { background-color: #fff3cd !important; border-left: 4px solid #ffc107; }
+        .next { background-color: #cce5ff !important; border-left: 4px solid #007bff; }
+        .metric-good { color: #27ae60; font-weight: bold; }
+        .metric-medium { color: #f39c12; font-weight: bold; }
+        .metric-poor { color: #e74c3c; font-weight: bold; }
+        .summary-box { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin: 20px 0; }
+        .key-finding { background-color: #e8f6f3; border-left: 4px solid #1abc9c; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        .bracket-search { background-color: #e3f2fd; border-left: 4px solid #2196f3; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        .warning { background-color: #fdf2e9; border-left: 4px solid #e67e22; padding: 15px; margin: 20px 0; }
+        .image-container { text-align: center; margin: 20px 0; }
+        img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0; }
+        .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
+        .stat-value { font-size: 2em; font-weight: bold; color: #3498db; }
+        .stat-label { color: #7f8c8d; margin-top: 5px; }
+        code { background-color: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: 'Consolas', monospace; }
+    </style>
+</head>
+<body>
+    <h1>Checkpoint Validation Report</h1>
+    <p>Generated: 2026-01-22 20:02:23</p>
+
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-value">26</div>
+            <div class="stat-label">Total Checkpoints</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">8</div>
+            <div class="stat-label">Experiments</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">50.2%</div>
+            <div class="stat-label">Best Species Accuracy</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">70.8%</div>
+            <div class="stat-label">Best Avg Accuracy</div>
+        </div>
+    </div>
+
+    <div class="key-finding">
+        <h3>Best Checkpoint Identified</h3>
+        <p><strong>Experiment:</strong> <code>exp-tremendous-gentle-passbook-251230</code></p>
+        <p><strong>Checkpoint:</strong> 23</p>
+        <p><strong>Path:</strong> <code>/media/j/Extra FAT/Amanita-Validation/exp-tremendous-gentle-passbook-251230/checkpoints/AtomicDirectory_checkpoint_23/best_model.pt</code></p>
+        <p><strong>Species Accuracy:</strong> <span class="metric-good">50.21%</span></p>
+        <p><strong>Hierarchical Accuracy:</strong> 36.43%</p>
+    </div>
+
+    <div class="bracket-search">
+        <h3>Bracket Search Results</h3>
+        <p>For optimal checkpoint selection, consider syncing these additional checkpoints from the ISC cluster:</p>
+        <table>
+            <tr>
+                <th>Position</th>
+                <th>Checkpoint</th>
+                <th>Species Accuracy</th>
+                <th>Status</th>
+            </tr>
+            <tr class="prev">
+                <td>Previous</td>
+                <td>N/A</td>
+                <td>N/A</td>
+                <td>Not available</td>
+            </tr>
+            <tr class="best">
+                <td><strong>BEST</strong></td>
+                <td><strong>23</strong></td>
+                <td><strong>50.21%</strong></td>
+                <td>Available locally</td>
+            </tr>
+            <tr class="next">
+                <td>Next</td>
+                <td>N/A</td>
+                <td>N/A</td>
+                <td>Not available</td>
+            </tr>
+        </table>
+
+        <p><strong>Missing checkpoints near best (consider syncing):</strong></p>
+        <ul>
+            <li>Checkpoint 18</li>
+            <li>Checkpoint 19</li>
+            <li>Checkpoint 20</li>
+            <li>Checkpoint 21</li>
+            <li>Checkpoint 22</li>
+        </ul>
+    </div>
+
+    <h2>Performance Visualizations</h2>
+
+    <h3>Accuracy by Taxonomic Rank</h3>
+    <div class="image-container">
+        <img src="accuracy_by_rank.png" alt="Accuracy by Rank">
+    </div>
+
+    <h3>Species vs Average Accuracy</h3>
+    <div class="image-container">
+        <img src="species_vs_avg_accuracy.png" alt="Species vs Average Accuracy">
+    </div>
+
+    <h3>Best Checkpoint per Experiment</h3>
+    <div class="image-container">
+        <img src="best_per_experiment.png" alt="Best per Experiment">
+    </div>
+
+    <h3>Accuracy Heatmap</h3>
+    <div class="image-container">
+        <img src="accuracy_heatmap.png" alt="Accuracy Heatmap">
+    </div>
+
+    <h2>All Checkpoint Results</h2>
+    <table>
+        <tr>
+            <th>Experiment</th>
+            <th>Checkpoint</th>
+            <th>Species Acc</th>
+            <th>Top-5 Species</th>
+            <th>Genus Acc</th>
+            <th>Family Acc</th>
+            <th>Avg Acc</th>
+            <th>Hierarchical</th>
+        </tr>
+        <tr class="best">
+            <td>exp-tremendous-gentle-passbook-2512</td>
+            <td>23</td>
+            <td class="metric-good">50.21%</td>
+            <td>73.68%</td>
+            <td>57.81%</td>
+            <td>61.07%</td>
+            <td>70.75%</td>
+            <td>36.43%</td>
+        </tr>
+        <tr class="">
+            <td>exp-organized-valley-fig-260101</td>
+            <td>35</td>
+            <td class="metric-medium">48.10%</td>
+            <td>71.60%</td>
+            <td>55.03%</td>
+            <td>57.92%</td>
+            <td>68.65%</td>
+            <td>32.35%</td>
+        </tr>
+        <tr class="">
+            <td>exp-coherent-kind-character-251230</td>
+            <td>84</td>
+            <td class="metric-medium">47.57%</td>
+            <td>71.01%</td>
+            <td>54.01%</td>
+            <td>57.77%</td>
+            <td>68.49%</td>
+            <td>33.74%</td>
+        </tr>
+        <tr class="">
+            <td>exp-elite-guttural-bubbler-251230</td>
+            <td>4</td>
+            <td class="metric-medium">47.23%</td>
+            <td>71.18%</td>
+            <td>53.47%</td>
+            <td>56.69%</td>
+            <td>67.23%</td>
+            <td>29.11%</td>
+        </tr>
+        <tr class="">
+            <td>exp-organized-valley-fig-260101</td>
+            <td>44</td>
+            <td class="metric-medium">46.87%</td>
+            <td>70.59%</td>
+            <td>54.04%</td>
+            <td>58.01%</td>
+            <td>68.28%</td>
+            <td>30.83%</td>
+        </tr>
+        <tr class="">
+            <td>exp-midnight-raspy-albertosaurus-25</td>
+            <td>80</td>
+            <td class="metric-medium">46.67%</td>
+            <td>70.40%</td>
+            <td>53.75%</td>
+            <td>55.90%</td>
+            <td>67.28%</td>
+            <td>29.92%</td>
+        </tr>
+        <tr class="">
+            <td>exp-organized-valley-fig-260101</td>
+            <td>6</td>
+            <td class="metric-medium">45.57%</td>
+            <td>69.62%</td>
+            <td>52.53%</td>
+            <td>56.55%</td>
+            <td>66.98%</td>
+            <td>29.86%</td>
+        </tr>
+        <tr class="">
+            <td>exp-organized-valley-fig-260101</td>
+            <td>33</td>
+            <td class="metric-medium">45.46%</td>
+            <td>69.46%</td>
+            <td>51.83%</td>
+            <td>55.49%</td>
+            <td>66.74%</td>
+            <td>28.82%</td>
+        </tr>
+        <tr class="">
+            <td>exp-organized-valley-fig-260101</td>
+            <td>19</td>
+            <td class="metric-medium">45.45%</td>
+            <td>69.44%</td>
+            <td>51.60%</td>
+            <td>55.68%</td>
+            <td>66.20%</td>
+            <td>29.09%</td>
+        </tr>
+        <tr class="">
+            <td>exp-organized-valley-fig-260101</td>
+            <td>64</td>
+            <td class="metric-medium">45.43%</td>
+            <td>69.12%</td>
+            <td>52.02%</td>
+            <td>55.74%</td>
+            <td>66.59%</td>
+            <td>30.29%</td>
+        </tr>
+        <tr class="">
+            <td>exp-organized-valley-fig-260101</td>
+            <td>58</td>
+            <td class="metric-medium">45.43%</td>
+            <td>69.41%</td>
+            <td>51.96%</td>
+            <td>55.79%</td>
+            <td>67.03%</td>
+            <td>28.04%</td>
+        </tr>
+        <tr class="">
+            <td>exp-organized-valley-fig-260101</td>
+            <td>42</td>
+            <td class="metric-medium">45.43%</td>
+            <td>69.27%</td>
+            <td>52.61%</td>
+            <td>56.43%</td>
+            <td>66.30%</td>
+            <td>27.66%</td>
+        </tr>
+        <tr class="">
+            <td>exp-organized-valley-fig-260101</td>
+            <td>31</td>
+            <td class="metric-medium">45.25%</td>
+            <td>69.34%</td>
+            <td>51.37%</td>
+            <td>54.21%</td>
+            <td>65.87%</td>
+            <td>26.74%</td>
+        </tr>
+        <tr class="">
+            <td>exp-organized-valley-fig-260101</td>
+            <td>60</td>
+            <td class="metric-medium">45.10%</td>
+            <td>68.94%</td>
+            <td>51.67%</td>
+            <td>54.95%</td>
+            <td>66.22%</td>
+            <td>28.78%</td>
+        </tr>
+        <tr class="">
+            <td>exp-organized-valley-fig-260101</td>
+            <td>17</td>
+            <td class="metric-medium">45.09%</td>
+            <td>69.15%</td>
+            <td>51.78%</td>
+            <td>54.93%</td>
+            <td>66.05%</td>
+            <td>27.03%</td>
+        </tr>
+        <tr class="">
+            <td>exp-heliotrope-leeward-fish-251229</td>
+            <td>26</td>
+            <td class="metric-medium">45.02%</td>
+            <td>69.08%</td>
+            <td>51.96%</td>
+            <td>55.59%</td>
+            <td>66.33%</td>
+            <td>29.48%</td>
+        </tr>
+        <tr class="">
+            <td>exp-perfect-peaceful-travel-260101</td>
+            <td>54</td>
+            <td class="metric-medium">44.91%</td>
+            <td>69.02%</td>
+            <td>51.75%</td>
+            <td>55.55%</td>
+            <td>66.36%</td>
+            <td>29.30%</td>
+        </tr>
+        <tr class="">
+            <td>exp-organized-valley-fig-260101</td>
+            <td>4</td>
+            <td class="metric-medium">44.63%</td>
+            <td>68.60%</td>
+            <td>51.47%</td>
+            <td>55.60%</td>
+            <td>66.44%</td>
+            <td>27.57%</td>
+        </tr>
+        <tr class="">
+            <td>exp-organized-valley-fig-260101</td>
+            <td>12</td>
+            <td class="metric-medium">44.50%</td>
+            <td>68.31%</td>
+            <td>51.86%</td>
+            <td>55.96%</td>
+            <td>65.95%</td>
+            <td>30.03%</td>
+        </tr>
+        <tr class="">
+            <td>exp-glowing-rustic-giraffatitan-251</td>
+            <td>4</td>
+            <td class="metric-medium">43.18%</td>
+            <td>67.10%</td>
+            <td>50.02%</td>
+            <td>53.48%</td>
+            <td>64.88%</td>
+            <td>25.77%</td>
+        </tr>
+        <tr class="">
+            <td>exp-organized-valley-fig-260101</td>
+            <td>29</td>
+            <td class="metric-medium">42.19%</td>
+            <td>65.99%</td>
+            <td>48.27%</td>
+            <td>50.98%</td>
+            <td>63.32%</td>
+            <td>22.58%</td>
+        </tr>
+        <tr class="">
+            <td>exp-glowing-rustic-giraffatitan-251</td>
+            <td>55</td>
+            <td class="metric-medium">40.16%</td>
+            <td>63.92%</td>
+            <td>46.92%</td>
+            <td>49.73%</td>
+            <td>61.81%</td>
+            <td>21.10%</td>
+        </tr>
+        <tr class="">
+            <td>exp-organized-valley-fig-260101</td>
+            <td>25</td>
+            <td class="metric-medium">40.05%</td>
+            <td>63.33%</td>
+            <td>46.62%</td>
+            <td>50.53%</td>
+            <td>64.02%</td>
+            <td>26.97%</td>
+        </tr>
+        <tr class="">
+            <td>exp-organized-valley-fig-260101</td>
+            <td>53</td>
+            <td class="metric-medium">40.01%</td>
+            <td>63.92%</td>
+            <td>46.74%</td>
+            <td>49.85%</td>
+            <td>61.19%</td>
+            <td>20.52%</td>
+        </tr>
+        <tr class="">
+            <td>exp-organized-valley-fig-260101</td>
+            <td>15</td>
+            <td class="metric-medium">39.51%</td>
+            <td>63.58%</td>
+            <td>46.61%</td>
+            <td>49.91%</td>
+            <td>60.82%</td>
+            <td>20.56%</td>
+        </tr>
+        <tr class="">
+            <td>exp-organized-valley-fig-260101</td>
+            <td>56</td>
+            <td class="metric-medium">39.19%</td>
+            <td>62.90%</td>
+            <td>45.68%</td>
+            <td>48.66%</td>
+            <td>60.46%</td>
+            <td>19.81%</td>
+        </tr>
+    </table>
+
+    <h2>Detailed Metrics for Best Checkpoint</h2>
+    <table>
+        <tr>
+            <th>Rank</th>
+            <th>Top-1 Accuracy</th>
+            <th>Top-5 Accuracy</th>
+            <th>Precision</th>
+            <th>Recall</th>
+            <th>F1 (Macro)</th>
+            <th>Avg Confidence</th>
+        </tr>
+        <tr>
+            <td><strong>Phylum</strong></td>
+            <td class="metric-good">92.39%</td>
+            <td>99.97%</td>
+            <td>63.22%</td>
+            <td>68.34%</td>
+            <td>62.72%</td>
+            <td>0.969</td>
+        </tr>
+        <tr>
+            <td><strong>Class</strong></td>
+            <td class="metric-good">88.52%</td>
+            <td>98.15%</td>
+            <td>56.76%</td>
+            <td>59.88%</td>
+            <td>55.53%</td>
+            <td>0.951</td>
+        </tr>
+        <tr>
+            <td><strong>Order</strong></td>
+            <td class="metric-medium">74.50%</td>
+            <td>94.13%</td>
+            <td>47.20%</td>
+            <td>48.43%</td>
+            <td>44.68%</td>
+            <td>0.869</td>
+        </tr>
+        <tr>
+            <td><strong>Family</strong></td>
+            <td class="metric-medium">61.07%</td>
+            <td>84.72%</td>
+            <td>46.42%</td>
+            <td>44.87%</td>
+            <td>41.99%</td>
+            <td>0.766</td>
+        </tr>
+        <tr>
+            <td><strong>Genus</strong></td>
+            <td class="metric-medium">57.81%</td>
+            <td>80.64%</td>
+            <td>38.85%</td>
+            <td>37.13%</td>
+            <td>34.71%</td>
+            <td>0.719</td>
+        </tr>
+        <tr>
+            <td><strong>Species</strong></td>
+            <td class="metric-medium">50.21%</td>
+            <td>73.68%</td>
+            <td>31.26%</td>
+            <td>28.44%</td>
+            <td>26.60%</td>
+            <td>0.619</td>
+        </tr>
+    </table>
+
+    <footer style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #7f8c8d;">
+        <p>Generated by validate_all_checkpoints.py</p>
+        <p>Artifact root: /media/j/Extra FAT/Amanita-Validation</p>
+    </footer>
+</body>
+</html>
