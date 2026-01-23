@@ -1,100 +1,87 @@
 # Session Handoff
 
-**Date**: 2026-01-19
-**Last Commit**: `72a2e94 Add validation notebook for multitask BEiT model evaluation`
+**Date**: 2026-01-22
+**Last Commit**: `14cde7e Merge pull request #2 from jknoll/fix/readme-formatting`
 
 ## Session Summary
 
-This session implemented a comprehensive validation notebook for the multi-task BEiT model and discovered a significant performance gap compared to the stock FungiTastic baseline.
+This session focused on syncing experiment artifacts from the Strong Compute ISC cluster to local storage for analysis. Created documentation for the artifact sync process and successfully transferred all missing checkpoints.
 
 ## What Was Done
 
-### 1. Created Validation Notebook (`validation_notebook.ipynb`)
-- Evaluates multi-task BEiT model on 89,659 validation samples
-- Computes metrics for all 6 taxonomic ranks (phylum → species)
-- Special analysis for Amanita phalloides (Death Cap) - 135 specimens
-- Generates visualizations: confusion matrices, confidence distributions, specimen grids
-- Outputs HTML report and pickled results
+### 1. Created Artifact Sync Documentation (`ARTIFACT-SYNC.md`)
+- Documented the full process for syncing artifacts from ISC to local machine
+- Covers prerequisites (WireGuard VPN, SSH keys, running container)
+- Step-by-step instructions for triggering sync and SCP commands
+- Troubleshooting section for common issues
 
-### 2. Fixed Several Issues During Implementation
-- Created fresh `.amanita` venv due to dependency conflicts in base conda env
-- Fixed `torch.load()` for PyTorch 2.6 compatibility (`weights_only=False`)
-- Fixed image path (needed extra `/FungiTastic/` in path)
-- Fixed histogram plotting edge case for sparse data
+### 2. Synced Missing Checkpoints
+Transferred checkpoints from remote ISC workstation (`192.168.127.71:52134`) to local storage (`/Volumes/Extra FAT/Amanita-Validation/`):
 
-### 3. Documented Performance Comparison (`comparison-with-stock-model.md`)
-Compared multi-task model to stock FungiTastic BEiT baseline (not committed, in .gitignore).
+**exp-organized-valley-fig-260101**: 27 new checkpoint directories added (28 total)
+- Checkpoints 2, 4, 6, 8, 12, 15, 17, 19, 21, 23, 25, 26, 29, 31, 33, 35, 37, 38, 42, 44, 46, 48, 50, 53, 56, 58, 60
+- Note: Some directories (8, 21, 23, 37, 46, 48, 50) are empty on remote - incomplete training runs
+
+**exp-safe-tabby-dirigible-251229**: 1 checkpoint added
+- AtomicDirectory_checkpoint_2/test_checkpoint.pt
+
+### 3. Merged PRs
+- PR #2 (fix/readme-formatting) merged to main
 
 ## Key Findings
 
-### Performance Degradation
-| Metric | Stock BEiT 224 | Multi-task BEiT | Delta |
-|--------|----------------|-----------------|-------|
-| Top-1 Accuracy | **70.2%** | 45.43% | **-24.8%** |
-| Macro F1-Score | **39.8%** | 23.38% | **-16.4%** |
+### Artifact Sync Process
+- ISC artifacts must be synced via the Strong Compute control panel Experiments tab
+- Artifacts sync to `/shared/artifacts/[experiment-name]/` on the remote workstation
+- SCP transfer requires WireGuard VPN connection and container-specific SSH port
+- Symlinks (`AtomicDirectory.latest_checkpoint`) cause SCP errors but don't affect data transfer
 
-**The multi-task model performs significantly worse at species-level classification.**
-
-### Multi-task Model Results (All Ranks)
-| Rank | Top-1 Acc | Top-5 Acc | F1 |
-|------|-----------|-----------|-----|
-| Phylum | 89.91% | 99.97% | 62.66% |
-| Class | 85.87% | 97.73% | 51.25% |
-| Order | 70.57% | 91.99% | 40.44% |
-| Family | 55.74% | 81.40% | 36.88% |
-| Genus | 52.02% | 76.08% | 30.52% |
-| Species | 45.43% | 69.12% | 23.38% |
-
-Hierarchical Accuracy (all ranks correct): **30.29%**
-
-### Amanita phalloides Concerning Finding
-- Species-level accuracy: 42.96% (58/135)
-- Genus-level accuracy: 31.85% (43/135)
-- Model sometimes gets species right but genus wrong (inconsistent predictions)
-
-## Possible Improvements to Investigate
-1. **Loss weighting**: Weight species loss more heavily
-2. **Hierarchical loss**: Penalize taxonomically distant mistakes more
-3. **Longer training**: Current checkpoint may be undertrained
-4. **Architecture changes**: More capacity or separate heads
+### Available Checkpoints for Analysis
+14 experiments with checkpoints available locally:
+1. exp-coherent-kind-character-251230 (checkpoint 84)
+2. exp-cotton-working-xenon-251230 (checkpoint 27)
+3. exp-elite-guttural-bubbler-251230 (checkpoint 4)
+4. exp-future-plume-longship-251231 (checkpoint 6)
+5. exp-glowing-rustic-giraffatitan-251230 (checkpoints 4, 55)
+6. exp-heliotrope-leeward-fish-251229 (checkpoint 26)
+7. exp-midnight-raspy-albertosaurus-251231 (checkpoint 80)
+8. exp-organized-valley-fig-260101 (28 checkpoints - most complete training run)
+9. exp-perfect-peaceful-travel-260101 (checkpoint 54)
+10. exp-safe-tabby-dirigible-251229 (checkpoint 2)
+11. exp-tremendous-gentle-passbook-251230 (checkpoint 23)
 
 ## Files Created/Modified
 
 ### New Files
-- `validation_notebook.ipynb` - Main validation notebook
-- `validation_notebook_executed.ipynb` - Executed version (gitignored)
-- `validation_results/` - Output directory with:
-  - `validation_report.html` - HTML summary report
-  - `validation_results.pkl` - Pickled results (gitignored, 51MB)
-  - `confidence_distributions.png`
-  - `confusion_matrix_phylum.png`
-  - `confusion_matrix_class.png`
-  - `well_recognized_specimens.png`
-  - `poorly_recognized_specimens.png`
-  - `amanita_phalloides_analysis.png`
-- `comparison-with-stock-model.md` - Detailed comparison (gitignored)
+- `ARTIFACT-SYNC.md` - Guide for syncing ISC artifacts to local machine
 
-### Modified Files
-- `.gitignore` - Added exclusions for executed notebooks, large pickle files, comparison doc
+### Local Artifacts Synced
+- `/Volumes/Extra FAT/Amanita-Validation/exp-organized-valley-fig-260101/checkpoints/` - 28 checkpoint directories
+- `/Volumes/Extra FAT/Amanita-Validation/exp-safe-tabby-dirigible-251229/checkpoints/` - 1 checkpoint directory
 
 ## Environment Notes
 
-### Local Workstation Setup
-- Created `.amanita` venv with: `torch torchvision timm pandas albumentations scikit-learn matplotlib seaborn tqdm jupyter nbconvert pillow`
-- Base conda env has dependency conflicts (numpy/pandas/wandb/protobuf issues)
+### ISC Connection (Session-Specific)
+- SSH: `ssh -p 52134 root@192.168.127.71`
+- Requires WireGuard VPN connection
+- Container ports change between sessions
 
-### Dataset Paths (Local)
-- Validation CSV: `/media/j/Extra FAT/FungiTastic/dataset/FungiTastic/metadata/FungiTastic/FungiTastic-ClosedSet-Val.csv`
-- Image Root: `/media/j/Extra FAT/FungiTastic/dataset/FungiTastic/FungiTastic/`
-- Checkpoint: `/home/j/Documents/git/amanita/artifacts/exp-organized-valley-fig-260101/checkpoints/AtomicDirectory_checkpoint_64/best_model.pt`
+### Local Artifact Storage
+- Mac: `/Volumes/Extra FAT/Amanita-Validation/`
+- Linux (previous session): `/media/j/Extra FAT/`
 
-## Next Steps to Consider
+## Next Steps
 
-1. **Investigate training logs** - Check if model was undertrained or had issues
-2. **Try different loss weighting** - Prioritize species-level performance
-3. **Evaluate on test set** - Current results are validation only
-4. **Compare training curves** - Stock vs multi-task learning dynamics
-5. **Consider hierarchical softmax** - Enforce taxonomic consistency
+1. **Launch TensorBoard** on synced experiments to analyze training curves
+   ```bash
+   tensorboard --logdir "/Volumes/Extra FAT/Amanita-Validation/"
+   ```
+
+2. **Compare checkpoints** across training runs to identify best performing model
+
+3. **Validate multiple checkpoints** from exp-organized-valley-fig-260101 to find optimal epoch
+
+4. **Investigate early stopping** - why did some experiments stop at low checkpoint numbers?
 
 ## Git Status at Handoff
 
@@ -103,7 +90,7 @@ On branch main
 Your branch is up to date with 'origin/main'.
 
 Untracked files:
-  TODO.md
+  ARTIFACT-SYNC.md
 ```
 
-All validation work has been committed and pushed.
+ARTIFACT-SYNC.md needs to be committed.
